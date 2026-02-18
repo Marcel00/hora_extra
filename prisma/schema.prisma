@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+}
+
+model PontoEntrega {
+  id        String   @id @default(cuid())
+  nome      String
+  ativo     Boolean  @default(true)
+  horario   String // "11h30"
+  pedidos   Pedido[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Cardapio {
+  id        String         @id @default(cuid())
+  data      DateTime       @default(now())
+  ativo     Boolean        @default(true)
+  preco     Float          @default(20.00)
+  itens     ItemCardapio[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model ItemCardapio {
+  id          String   @id @default(cuid())
+  nome        String
+  categoria   String // "acompanhamento", "proteina", "extra"
+  disponivel  Boolean  @default(true)
+  maxSelecoes Int      @default(99) // Limite de seleção para esta categoria
+  cardapioId  String
+  cardapio    Cardapio @relation(fields: [cardapioId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Usuario {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  senha     String // Hash bcrypt
+  role      String   @default("admin")
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Pedido {
+  numero          Int          @id @default(autoincrement())
+  nomeCliente     String
+  telefone        String?
+  quantidade      Int
+  itens           String // JSON string array
+  observacoes     String?
+  valorTotal      Float
+  status          String       @default("pendente") // pendente, preparado, entregue
+  pontoEntregaId  String
+  pontoEntrega    PontoEntrega @relation(fields: [pontoEntregaId], references: [id])
+  whatsappEnviado Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+model Configuracao {
+  id                  String   @id @default(cuid())
+  horarioAbertura     String   @default("08:00")
+  horarioFechamento   String   @default("11:00")
+  mensagemWhatsApp    String   @default("🍱 *Pedido Confirmado!*\n\nOlá {nome}!\n\nSeu pedido foi recebido com sucesso.")
+  telefoneNotificacao String   @default("")
+  senhaAdmin          String   @default("1234")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
