@@ -9,9 +9,20 @@ export function cn(...inputs: ClassValue[]) {
  * Verifica se está dentro do horário de pedidos (08h-11h)
  */
 export function isPedidoAberto(horarioAbertura: string, horarioFechamento: string): boolean {
+  // Ajustar para fuso horário de Brasília (UTC-3) usando Intl para maior precisão em ambientes UTC
   const now = new Date()
-  const hora = now.getHours()
-  const minuto = now.getMinutes()
+  
+  const formatter = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: false
+  })
+  
+  const parts = formatter.formatToParts(now)
+  const hora = parseInt(parts.find(p => p.type === 'hour')?.value || '0')
+  const minuto = parseInt(parts.find(p => p.type === 'minute')?.value || '0')
+  
   const horaAtual = hora * 60 + minuto
   
   const [horaAb, minAb] = horarioAbertura.split(':').map(Number)
