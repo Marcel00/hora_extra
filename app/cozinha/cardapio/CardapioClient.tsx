@@ -39,10 +39,10 @@ interface CardapioClientProps {
   cardapios: Cardapio[]
 }
 
-export function CardapioClient({ cardapios: cardapiosIniciais }: CardapioClientProps) {
+export function CardapioClient({ cardapios }: CardapioClientProps) {
   const router = useRouter()
   const { isAuthenticated, logout } = useAuthStore()
-  const [cardapios] = useState(cardapiosIniciais)
+  // const [cardapios] = useState(cardapiosIniciais) // Removido para permitir atualização em tempo real via props
   const [showNovoCardapio, setShowNovoCardapio] = useState(false)
   const [showNovoItem, setShowNovoItem] = useState<string | null>(null)
   
@@ -90,6 +90,12 @@ export function CardapioClient({ cardapios: cardapiosIniciais }: CardapioClientP
     }
   }
 
+  // Edit state
+  interface EditingItem extends ItemCardapio {
+    cardapioId: string
+  }
+  const [editingItem, setEditingItem] = useState<EditingItem | null>(null)
+
   const handleCreateItem = async (e: React.FormEvent, cardapioId: string) => {
     e.preventDefault()
     const result = await createItemCardapio({
@@ -99,11 +105,44 @@ export function CardapioClient({ cardapios: cardapiosIniciais }: CardapioClientP
     })
     
     if (result.success) {
-      setShowNovoItem(null)
-      setNovoItemNome('')
-      setNovoItemCategoria('acompanhamento')
+      resetForm()
       router.refresh()
     }
+  }
+
+  const handleUpdateItem = async (e: React.FormEvent, id: string) => {
+    e.preventDefault()
+    const result = await updateItemCardapio(id, { nome: novoItemNome })
+    if (result.success) {
+      resetForm()
+      router.refresh()
+    }
+  }
+
+  const handleSaveItem = (e: React.FormEvent, cardapioId: string) => {
+      if (editingItem) {
+          handleUpdateItem(e, editingItem.id)
+      } else {
+          handleCreateItem(e, cardapioId)
+      }
+  }
+
+  const startEditing = (item: ItemCardapio, cardapioId: string) => {
+      setEditingItem({ ...item, cardapioId })
+      setNovoItemNome(item.nome)
+      setNovoItemCategoria(item.categoria)
+      setShowNovoItem(null) // Fecha novo item se aberto
+  }
+
+  const handleCancelEdit = () => {
+      resetForm()
+  }
+
+  const resetForm = () => {
+      setShowNovoItem(null)
+      setEditingItem(null)
+      setNovoItemNome('')
+      setNovoItemCategoria('acompanhamento')
   }
 
   const handleToggleItemDisponivel = async (id: string, disponivel: boolean) => {
@@ -129,7 +168,7 @@ export function CardapioClient({ cardapios: cardapiosIniciais }: CardapioClientP
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <main className="min-h-screen bg-linear-to-br from-orange-50 via-white to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <ThemeToggle />
       
       <div className="container mx-auto px-4 py-8">
@@ -259,22 +298,32 @@ export function CardapioClient({ cardapios: cardapiosIniciais }: CardapioClientP
                           >
                             <div className="flex items-center gap-3">
                               <span className="text-gray-800 dark:text-gray-200">{item.nome}</span>
-                              {!item.disponivel && (
-                                <Badge variant="default">Indisponível</Badge>
-                              )}
                             </div>
                             <div className="flex gap-2">
                               <Button
                                 onClick={() => handleToggleItemDisponivel(item.id, item.disponivel)}
-                                variant="ghost"
-                                className="text-sm"
+                                size="sm"
+                                variant={item.disponivel ? "secondary" : "danger"}
+                                className="text-xs"
+                                title="Define se o item aparece para o cliente"
                               >
-                                {item.disponivel ? '👁️' : '🚫'}
+                                {item.disponivel ? '✅ Disponível' : '❌ Esgotado'}
+                              </Button>
+                              <Button
+                                onClick={() => startEditing(item, cardapio.id)}
+                                size="sm"
+                                variant="ghost"
+                                className="text-xs"
+                                title="Editar nome"
+                              >
+                                ✏️
                               </Button>
                               <Button
                                 onClick={() => handleDeleteItem(item.id)}
                                 variant="ghost"
-                                className="text-sm text-red-600"
+                                size="sm"
+                                className="text-xs text-red-600 hover:bg-red-50"
+                                title="Excluir item"
                               >
                                 🗑️
                               </Button>
@@ -282,28 +331,29 @@ export function CardapioClient({ cardapios: cardapiosIniciais }: CardapioClientP
                           </div>
                         ))}
                         
-                        {/* Adicionar Item */}
-                        {showNovoItem === `${cardapio.id}-${categoria}` ? (
+                        {/* Adicionar ou Editar Item */}
+                        {showNovoItem === `${cardapio.id}-${categoria}` || (editingItem && editingItem.cardapioId === cardapio.id && editingItem.categoria === categoria) ? (
                           <form
-                            onSubmit={(e) => handleCreateItem(e, cardapio.id)}
-                            className="p-3 bg-gray-100 dark:bg-gray-600 rounded-lg space-y-2"
+                            onSubmit={(e) => handleSaveItem(e, cardapio.id)}
+                            className="p-3 bg-gray-100 dark:bg-gray-600 rounded-lg space-y-2 border-2 border-orange-200 dark:border-orange-800"
                           >
+                            <h5 className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                                {editingItem ? '✏️ Editar Item' : '➕ Novo Item'}
+                            </h5>
                             <Input
                               placeholder="Nome do item"
                               value={novoItemNome}
                               onChange={(e) => setNovoItemNome(e.target.value)}
+                              autoFocus
                               required
                             />
                             <div className="flex gap-2">
                               <Button type="submit" variant="primary" className="text-sm">
-                                Adicionar
+                                {editingItem ? 'Salvar' : 'Adicionar'}
                               </Button>
                               <Button
                                 type="button"
-                                onClick={() => {
-                                  setShowNovoItem(null)
-                                  setNovoItemNome('')
-                                }}
+                                onClick={handleCancelEdit}
                                 variant="secondary"
                                 className="text-sm"
                               >
@@ -314,11 +364,12 @@ export function CardapioClient({ cardapios: cardapiosIniciais }: CardapioClientP
                         ) : (
                           <Button
                             onClick={() => {
+                              resetForm()
                               setShowNovoItem(`${cardapio.id}-${categoria}`)
                               setNovoItemCategoria(categoria)
                             }}
                             variant="ghost"
-                            className="w-full text-sm"
+                            className="w-full text-sm border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400"
                           >
                             ➕ Adicionar {label.split(' ')[1]}
                           </Button>
@@ -330,6 +381,7 @@ export function CardapioClient({ cardapios: cardapiosIniciais }: CardapioClientP
               </div>
             </Card>
           ))}
+
 
           {cardapios.length === 0 && (
             <Card className="text-center py-12">
