@@ -7,6 +7,8 @@ export async function createPedido(data: {
   nomeCliente: string
   telefone: string
   quantidade: number
+  tamanhoId?: string
+  tamanhoNome?: string
   itens: string[]
   observacoes: string
   valorTotal: number
@@ -18,6 +20,8 @@ export async function createPedido(data: {
         nomeCliente: data.nomeCliente,
         telefone: data.telefone,
         quantidade: data.quantidade,
+        tamanhoId: data.tamanhoId,
+        tamanhoNome: data.tamanhoNome,
         itens: JSON.stringify(data.itens),
         observacoes: data.observacoes || null,
         valorTotal: data.valorTotal,

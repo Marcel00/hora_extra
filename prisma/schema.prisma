@@ -25,10 +25,22 @@ model Cardapio {
   id        String         @id @default(cuid())
   data      DateTime       @default(now())
   ativo     Boolean        @default(true)
-  preco     Float          @default(20.00)
+  preco     Float          @default(20.00) // Preço base padrão (caso não tenha tamanho)
   itens     ItemCardapio[]
+  tamanhos  Tamanho[]
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
+}
+
+model Tamanho {
+  id         String   @id @default(cuid())
+  nome       String // "Pequena", "Grande"
+  preco      Float
+  ativo      Boolean  @default(true)
+  cardapioId String
+  cardapio   Cardapio @relation(fields: [cardapioId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model ItemCardapio {
@@ -59,10 +71,12 @@ model Pedido {
   nomeCliente     String
   telefone        String?
   quantidade      Int
+  tamanhoId       String? // Opcional para manter compatibilidade com pedidos antigos
+  tamanhoNome     String? // "Pequena", "Grande" (Historico)
   itens           String // JSON string array
   observacoes     String?
   valorTotal      Float
-  status          String       @default("pendente") // pendente, preparado, entregue
+  status          String       @default("pendente") // pendente, preparado, entregue, cancelado
   pontoEntregaId  String
   pontoEntrega    PontoEntrega @relation(fields: [pontoEntregaId], references: [id])
   whatsappEnviado Boolean      @default(false)

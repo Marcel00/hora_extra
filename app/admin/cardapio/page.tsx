@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import { CardapioClient } from './CardapioClient'
+import { TamanhoManager } from './TamanhoManager'
 import { Card } from '@/components/ui/Card'
 
 export default async function CardapioPage() {
@@ -8,6 +9,9 @@ export default async function CardapioPage() {
     include: {
       itens: {
         orderBy: { nome: 'asc' },
+      },
+      tamanhos: {
+        orderBy: { preco: 'asc' },
       },
     },
   })
@@ -31,5 +35,10 @@ export default async function CardapioPage() {
     )
   }
 
-  return <CardapioClient cardapioId={cardapio.id} itens={cardapio.itens} />
+  return (
+    <div className="space-y-8">
+      <TamanhoManager cardapioId={cardapio.id} tamanhos={cardapio.tamanhos} />
+      <CardapioClient cardapioId={cardapio.id} itens={cardapio.itens} />
+    </div>
+  )
 }

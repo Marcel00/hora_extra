@@ -1,15 +1,21 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
-import { Badge } from '@/components/ui/Badge'
 
 import { createPedido } from './actions'
 import { ConfirmationModal } from '@/components/ConfirmationModal'
+
+interface Tamanho {
+  id: string
+  nome: string
+  preco: number
+  ativo: boolean
+}
 
 interface ItemCardapio {
   id: string
@@ -23,6 +29,7 @@ interface Cardapio {
   id: string
   preco: number
   itens: ItemCardapio[]
+  tamanhos: Tamanho[]
 }
 
 interface PontoEntrega {
@@ -39,6 +46,13 @@ interface PedidoClientProps {
 
 export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoClientProps) {
   const router = useRouter()
+  const [tamanhoSelecionado, setTamanhoSelecionado] = useState<Tamanho | null>(() => {
+    // Se tiver apenas um tamanho, já seleciona ele
+    if (cardapio?.tamanhos && cardapio.tamanhos.length === 1) {
+      return cardapio.tamanhos[0]
+    }
+    return null
+  })
   const [nomeCliente, setNomeCliente] = useState('')
   const [telefone, setTelefone] = useState('')
   const [quantidade, setQuantidade] = useState(1)
@@ -50,6 +64,7 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
 
   // Auto-scroll ref
   const bottomRef = useRef<HTMLDivElement>(null)
+  const sizesRef = useRef<HTMLDivElement>(null)
 
   if (!pedidosAbertos) {
     return (
@@ -143,11 +158,59 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
     )
   }
 
-  const valorTotal = cardapio.preco * quantidade
+  // Preço Dinâmico
+  const calculoPreco = (() => {
+    if (!cardapio) return { 
+      totalGeral: 0,
+      detalhes: { 
+        base: 0, 
+        proteinasExtras: { qtd: 0, valor: 0 }, 
+        extras: { qtd: 0, valor: 0 } 
+      }
+    }
+
+    // Preço base vem do tamanho selecionado ou do cardápio legado
+    const precoBase = tamanhoSelecionado ? tamanhoSelecionado.preco : cardapio.preco
+    
+    // Identificar itens selecionados com seus dados completos
+    const itensCompletos = itensSelecionados.map(nome => 
+      cardapio.itens.find(i => i.nome === nome)
+    ).filter((item): item is ItemCardapio => !!item)
+    
+    // Regra 1: Mais de 2 proteínas = +5.00 cada extra
+    const proteinas = itensCompletos.filter(i => i.categoria === 'proteina')
+    const qtdProteinasExtras = Math.max(0, proteinas.length - 2)
+    const valorProteinasExtras = qtdProteinasExtras * 5.00
+
+    // Regra 2: Itens extras = +10.00 cada
+    const extras = itensCompletos.filter(i => i.categoria === 'extra')
+    const valorExtras = extras.length * 10.00
+    
+    // Total Unitário
+    const totalUnitario = precoBase + valorProteinasExtras + valorExtras
+    const totalGeral = totalUnitario * quantidade
+
+    return {
+      totalGeral,
+      detalhes: {
+        base: precoBase,
+        proteinasExtras: { qtd: qtdProteinasExtras, valor: valorProteinasExtras },
+        extras: { qtd: extras.length, valor: valorExtras }
+      }
+    }
+  })()
+
+  const valorTotal = calculoPreco.totalGeral
 
   const handleOpenModal = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     
+    if (cardapio?.tamanhos && cardapio.tamanhos.length > 0 && !tamanhoSelecionado) {
+      alert('Por favor, selecione o tamanho da marmita.')
+      sizesRef.current?.scrollIntoView({ behavior: 'smooth' })
+      return
+    }
+
     if (!nomeCliente || !quantidade) {
       alert('Por favor, preencha seu nome e a quantidade.')
       return
@@ -167,6 +230,8 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
       nomeCliente,
       telefone,
       quantidade,
+      tamanhoId: tamanhoSelecionado?.id,
+      tamanhoNome: tamanhoSelecionado?.nome,
       itens: itensSelecionados,
       observacoes,
       valorTotal,
@@ -255,10 +320,44 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
           </p>
         </div>
 
+        {/* Escolha do Tamanho */}
+        {cardapio.tamanhos && cardapio.tamanhos.length > 0 && (
+          <section className="space-y-4" ref={sizesRef}>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 flex items-center">
+               1. Escolha o Tamanho
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              {cardapio.tamanhos.map((tamanho) => (
+                <div
+                  key={tamanho.id}
+                  onClick={() => setTamanhoSelecionado(tamanho)}
+                  className={`
+                    cursor-pointer p-6 rounded-2xl border-2 transition-all duration-200 flex flex-col items-center justify-center text-center
+                    ${tamanhoSelecionado?.id === tamanho.id
+                      ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 shadow-md scale-105'
+                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-orange-300'
+                    }
+                  `}
+                >
+                  <span className="text-xl font-bold text-gray-800 dark:text-gray-100">{tamanho.nome}</span>
+                  <span className="text-lg font-bold text-orange-600 dark:text-orange-500 mt-2">
+                    R$ {tamanho.preco.toFixed(2)}
+                  </span>
+                  {tamanhoSelecionado?.id === tamanho.id && (
+                    <div className="mt-2 text-orange-500 text-xs font-bold">
+                      ✓ SELECIONADO
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Dados Pessoais */}
         <section className="space-y-4">
           <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 flex items-center">
-             1. Seus Dados
+             {cardapio.tamanhos && cardapio.tamanhos.length > 0 ? '2.' : '1.'} Seus Dados
           </h3>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-700 space-y-4">
             <div>
@@ -272,7 +371,7 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
                 className="h-12 text-lg"
               />
             </div>
-            <div>
+            {/* <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 WhatsApp (Opcional)
               </label>
@@ -295,14 +394,14 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
                 className="h-12 text-lg"
                 maxLength={15}
               />
-            </div>
+            </div> */}
           </div>
         </section>
 
         {/* Quantidade */}
         <section className="space-y-4">
            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">
-             2. Tamanho da Fome
+             {cardapio.tamanhos && cardapio.tamanhos.length > 0 ? '3.' : '2.'} Tamanho da Fome
           </h3>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between mb-4">
@@ -324,7 +423,7 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
               </div>
             </div>
             <p className="text-right text-sm text-gray-500">
-              Valor unitário: R$ {cardapio.preco.toFixed(2)}
+              Valor unitário: R$ {calculoPreco.detalhes.base.toFixed(2)}
             </p>
           </div>
         </section>
@@ -377,6 +476,11 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
             <p className="text-2xl font-extrabold text-orange-600 dark:text-orange-500">
               R$ {valorTotal.toFixed(2)}
             </p>
+            {(calculoPreco.detalhes?.proteinasExtras.valor > 0 || calculoPreco.detalhes?.extras.valor > 0) && (
+              <p className="text-xs text-orange-600 dark:text-orange-400">
+                (Inclui +R$ {(calculoPreco.detalhes.proteinasExtras.valor + calculoPreco.detalhes.extras.valor).toFixed(2)} de adicionais)
+              </p>
+            )}
           </div>
           <Button 
             onClick={() => handleOpenModal()} 

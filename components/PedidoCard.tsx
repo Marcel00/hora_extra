@@ -1,8 +1,6 @@
 import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
 
 interface Pedido {
   numero: number
@@ -13,6 +11,7 @@ interface Pedido {
   observacoes: string | null
   valorTotal: number
   status: string
+  tamanhoNome?: string | null
   pontoEntrega: {
     nome: string
     horario: string
@@ -22,121 +21,108 @@ interface Pedido {
 
 interface PedidoCardProps {
   pedido: Pedido
-  onUpdateStatus: (numero: number, novoStatus: string) => void
+  onUpdateStatus?: (numero: number, novoStatus: string) => void
   onPrint?: (pedido: Pedido) => void
 }
 
 export function PedidoCard({ pedido, onUpdateStatus, onPrint }: PedidoCardProps) {
   const itens = JSON.parse(pedido.itens) as string[]
   
-  const statusMap = {
-    pendente: { label: 'Pendente', variant: 'pendente' as const },
-    preparado: { label: 'Preparado', variant: 'preparado' as const },
-    entregue: { label: 'Entregue', variant: 'entregue' as const },
+  const statusColors = {
+    pendente: { border: 'border-yellow-400', bg: 'bg-yellow-50 dark:bg-yellow-900/20', text: 'text-yellow-700 dark:text-yellow-500', label: '⏳ Pendente', variant: 'warning' as const },
+    preparado: { border: 'border-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-700 dark:text-blue-500', label: '🍳 Preparado', variant: 'info' as const },
+    entregue: { border: 'border-green-400', bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-700 dark:text-green-500', label: '✅ Entregue', variant: 'success' as const },
+    cancelado: { border: 'border-red-400', bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-500', label: '❌ Cancelado', variant: 'destructive' as const },
   }
 
-  const currentStatus = statusMap[pedido.status as keyof typeof statusMap] || statusMap.pendente
+  const currentStatus = statusColors[pedido.status as keyof typeof statusColors] || statusColors.pendente
+
+  // Alerta de Observação
+  const temObservacao = pedido.observacoes && pedido.observacoes.length > 0
+  const obsClass = temObservacao ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800' : ''
 
   return (
-    <Card className="hover:shadow-xl transition-shadow relative">
-       {onPrint && (
-        <Button 
-          variant="ghost" 
-          onClick={() => onPrint(pedido)}
-          className="absolute top-4 right-14 p-2 h-auto text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white"
-          title="Imprimir Comanda"
-        >
-          🖨️
-        </Button>
-      )}
-      <div className="flex items-start justify-between mb-4">
+    <Card className={`hover:shadow-xl transition-shadow relative border-l-4 ${currentStatus.border} ${obsClass}`}>
+      <div className="flex justify-between items-start mb-3">
         <div>
-          <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-            Pedido #{pedido.numero}
+          <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+            #{pedido.numero} - {pedido.nomeCliente}
+            {pedido.quantidade > 1 && (
+               <span className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full border border-orange-200">
+                 {pedido.quantidade}x
+               </span>
+            )}
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {format(new Date(pedido.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+             {pedido.pontoEntrega.nome}
           </p>
+          {pedido.tamanhoNome && (
+            <span className="inline-block mt-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-xs font-bold px-2 py-0.5 rounded border border-gray-300 dark:border-gray-600">
+              📏 {pedido.tamanhoNome}
+            </span>
+          )}
         </div>
-        <Badge variant={currentStatus.variant}>
-          {currentStatus.label}
-        </Badge>
+        <div className="flex items-center gap-2">
+           {onPrint && (
+            <Button 
+              variant="ghost" 
+              onClick={() => onPrint(pedido)}
+              className="p-2 h-auto text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white"
+              title="Imprimir Comanda"
+            >
+              🖨️
+            </Button>
+          )}
+          <Badge variant={currentStatus.variant}>
+            {currentStatus.label}
+          </Badge>
+        </div>
       </div>
 
-      <div className="space-y-3 mb-4">
-        <div>
-          <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Cliente</p>
-          <p className="text-lg text-gray-800 dark:text-gray-200">{pedido.nomeCliente}</p>
-        </div>
-
-        <div>
-          <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Telefone</p>
-          <p className="text-lg text-gray-800 dark:text-gray-200">{pedido.telefone || '-'}</p>
-        </div>
-
-        <div>
-          <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Ponto de Entrega</p>
-          <p className="text-lg text-gray-800 dark:text-gray-200">
-            📍 {pedido.pontoEntrega.nome} - {pedido.pontoEntrega.horario}
-          </p>
-        </div>
-
-        <div>
-          <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Quantidade</p>
-          <p className="text-lg text-gray-800 dark:text-gray-200">{pedido.quantidade}x marmitas</p>
-        </div>
-
-        <div>
-          <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Itens</p>
-          <ul className="list-disc list-inside text-gray-800 dark:text-gray-200">
-            {itens.map((item: string, index: number) => (
-              <li key={index}>{item}</li>
-            ))}
-          </ul>
-        </div>
-
+      <div className="space-y-2 mb-4">
+        {itens.map((item, index) => (
+          <div key={index} className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+             <span className="text-green-500 font-bold">✓</span>
+             <span>{item}</span>
+          </div>
+        ))}
         {pedido.observacoes && (
-          <div>
-            <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Observações</p>
-            <p className="text-gray-800 dark:text-gray-200 italic">{pedido.observacoes}</p>
+          <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-yellow-800 dark:text-yellow-200 text-sm font-semibold flex items-start gap-2">
+            <span>⚠️</span>
+            <span>Obs: {pedido.observacoes}</span>
           </div>
         )}
-
-        <div>
-          <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Valor Total</p>
-          <p className="text-xl font-bold text-orange-600 dark:text-orange-500">
-            R$ {pedido.valorTotal.toFixed(2)}
-          </p>
-        </div>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
-        {pedido.status === 'pendente' && (
-          <Button
-            onClick={() => onUpdateStatus(pedido.numero, 'preparado')}
-            variant="primary"
-            className="flex-1"
-          >
-            ✅ Marcar como Preparado
-          </Button>
-        )}
-        {pedido.status === 'preparado' && (
-          <Button
-            onClick={() => onUpdateStatus(pedido.numero, 'entregue')}
-            variant="primary"
-            className="flex-1"
-          >
-            🚚 Marcar como Entregue
-          </Button>
-        )}
-        {pedido.status === 'entregue' && (
-          <Button
-            onClick={() => onUpdateStatus(pedido.numero, 'pendente')}
-            variant="secondary"
-            className="flex-1"
-          >
-            🔄 Reabrir Pedido
-          </Button>
+      <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700 mt-3">
+         <p className="font-bold text-lg text-gray-800 dark:text-gray-100">
+          R$ {pedido.valorTotal.toFixed(2)}
+        </p>
+
+        {onUpdateStatus && (
+          <div className="flex gap-2">
+            {pedido.status === 'pendente' && (
+              <Button size="sm" onClick={() => onUpdateStatus(pedido.numero, 'preparado')}>
+                Iniciar Preparo
+              </Button>
+            )}
+            {pedido.status === 'preparado' && (
+              <Button size="sm" variant="secondary" onClick={() => onUpdateStatus(pedido.numero, 'entregue')}>
+                Marcar Entregue
+              </Button>
+            )}
+            {/* Reabrir se necessário */}
+            {pedido.status === 'entregue' && (
+              <Button size="sm" variant="ghost" onClick={() => onUpdateStatus(pedido.numero, 'pendente')}>
+                Reabrir
+              </Button>
+            )}
+            {pedido.status === 'cancelado' && (
+              <Button size="sm" variant="ghost" onClick={() => onUpdateStatus(pedido.numero, 'pendente')}>
+                Reabrir
+              </Button>
+            )}
+          </div>
         )}
       </div>
     </Card>

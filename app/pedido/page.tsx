@@ -30,6 +30,10 @@ export default async function PedidoPage({
         where: { disponivel: true },
         orderBy: { categoria: 'asc' },
       },
+      tamanhos: {
+        where: { ativo: true },
+        orderBy: { preco: 'asc' },
+      },
     },
   })
 

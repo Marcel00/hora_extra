@@ -22,7 +22,8 @@ export default function AdminLoginPage() {
     setError('')
     setLoading(true)
 
-    const result = await loginAdmin(email, password)
+    // E-mail fixo conforme solicitado (apenas senha na tela)
+    const result = await loginAdmin('admin@admin.com', password)
 
     if (result.success && result.user) {
       login(result.user)
@@ -45,25 +46,13 @@ export default function AdminLoginPage() {
             Login Administrativo
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Hora Extra
+            Digita a senha de acesso (Padrão: 1234)
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              E-mail
-            </label>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="seu@email.com"
-              required
-              className="h-12 text-lg"
-            />
-          </div>
-
+          {/* Email removido da view, usando fixo admin@admin.com */}
+          
           <div>
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
               Senha
@@ -74,7 +63,8 @@ export default function AdminLoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              className="h-12 text-lg"
+              className="h-12 text-lg text-center tracking-widest"
+              autoFocus
             />
           </div>
 

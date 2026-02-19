@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
@@ -36,39 +37,56 @@ async function main() {
     const cardapio = await prisma.cardapio.create({
       data: {
         ativo: true,
-        preco: 20.00,
+        preco: 20.00, // Preço base legado
+        tamanhos: {
+          create: [
+            { nome: 'Pequena', preco: 15.00, ativo: true },
+            { nome: 'Grande', preco: 20.00, ativo: true }
+          ]
+        },
         itens: {
           create: [
             // Acompanhamentos
-            { nome: 'Arroz', categoria: 'acompanhamento', disponivel: true },
-            { nome: 'Feijão Tropeiro', categoria: 'acompanhamento', disponivel: true },
-            { nome: 'Feijão Caldo', categoria: 'acompanhamento', disponivel: true },
-            { nome: 'Macarrão', categoria: 'acompanhamento', disponivel: true },
-            { nome: 'Farofa', categoria: 'acompanhamento', disponivel: true },
-            { nome: 'Mandioca', categoria: 'acompanhamento', disponivel: true },
-            { nome: 'Batata Palha', categoria: 'acompanhamento', disponivel: true },
-            { nome: 'Purê', categoria: 'acompanhamento', disponivel: true },
-            { nome: 'Vinagrete', categoria: 'acompanhamento', disponivel: true },
-            { nome: 'Alface com Tomate', categoria: 'acompanhamento', disponivel: true },
+            { nome: 'Arroz', categoria: 'acompanhamento', disponivel: true, maxSelecoes: 1 },
+            { nome: 'Feijão Caldo', categoria: 'acompanhamento', disponivel: true, maxSelecoes: 1 },
+            { nome: 'Feijão Tropeiro', categoria: 'acompanhamento', disponivel: true, maxSelecoes: 1 },
+            { nome: 'Macarrão', categoria: 'acompanhamento', disponivel: true, maxSelecoes: 1 },
+            { nome: 'Farofa', categoria: 'acompanhamento', disponivel: true, maxSelecoes: 1 },
+            { nome: 'Mandioca', categoria: 'acompanhamento', disponivel: true, maxSelecoes: 1 },
+            { nome: 'Batata Palha', categoria: 'acompanhamento', disponivel: true, maxSelecoes: 1 },
+            { nome: 'Purê', categoria: 'acompanhamento', disponivel: true, maxSelecoes: 1 },
+            { nome: 'Vinagrete', categoria: 'acompanhamento', disponivel: true, maxSelecoes: 1 },
+            { nome: 'Alface com Tomate', categoria: 'acompanhamento', disponivel: true, maxSelecoes: 1 },
             
             // Proteínas
-            { nome: 'Alcatra', categoria: 'proteina', disponivel: true },
-            { nome: 'Contra Filé', categoria: 'proteina', disponivel: true },
-            { nome: 'Frango Grelhado', categoria: 'proteina', disponivel: true },
-            { nome: 'Asinha de Frango', categoria: 'proteina', disponivel: true },
-            { nome: 'Linguiça', categoria: 'proteina', disponivel: true },
-            { nome: 'Peixe', categoria: 'proteina', disponivel: true },
-            
+            { nome: 'Asinha de Frango', categoria: 'proteina', disponivel: true, maxSelecoes: 2 },
+            { nome: 'Alcatra', categoria: 'proteina', disponivel: true, maxSelecoes: 2 },
+            { nome: 'Peixe', categoria: 'proteina', disponivel: true, maxSelecoes: 2 },
+            { nome: 'Linguiça', categoria: 'proteina', disponivel: true, maxSelecoes: 2 },
+            { nome: 'Contra Filé', categoria: 'proteina', disponivel: true, maxSelecoes: 2 },
+            { nome: 'Frango Grelhado', categoria: 'proteina', disponivel: true, maxSelecoes: 2 },
+
             // Extras
-            { nome: 'Espetinho de Carne', categoria: 'extra', disponivel: true },
-            { nome: 'Espetinho de Frango', categoria: 'extra', disponivel: true },
-            { nome: 'Refrigerante', categoria: 'extra', disponivel: true },
+            { nome: 'Espetinho de Carne', categoria: 'extra', disponivel: true, maxSelecoes: 99 },
+            { nome: 'Espetinho de Frango', categoria: 'extra', disponivel: true, maxSelecoes: 99 },
+            { nome: 'Refrigerante', categoria: 'extra', disponivel: true, maxSelecoes: 99 },
           ]
         }
       }
     })
-    console.log('✅ Cardápio criado com', cardapio.preco, 'reais')
+    console.log('✅ Cardápio criado com tamanhos:', cardapio.id)
   } else {
+    // Se já existe cardápio antigo sem tamanhos, criar tamanhos para manter compatibilidade
+    const tamanhosExistentes = await prisma.tamanho.count({ where: { cardapioId: cardapioExistente.id } })
+    if (tamanhosExistentes === 0) {
+       await prisma.tamanho.createMany({
+        data: [
+          { nome: 'Pequena', preco: 15.00, ativo: true, cardapioId: cardapioExistente.id },
+          { nome: 'Grande', preco: 20.00, ativo: true, cardapioId: cardapioExistente.id }
+        ]
+       })
+       console.log('✅ Tamanhos adicionados ao cardápio existente')
+    }
     console.log('ℹ️ O cardápio já existe, pulando criação.')
   }
 
@@ -88,6 +106,25 @@ async function main() {
   } else {
     console.log('ℹ️ A configuração já existe, pulando criação.')
   }
+
+  // Criar usuário admin
+  const adminExistente = await prisma.usuario.findUnique({ where: { email: 'admin@admin.com' } })
+  if (!adminExistente) {
+    const hashedPassword = await bcrypt.hash('1234', 10)
+    await prisma.usuario.create({
+      data: {
+        nome: 'Admin',
+        email: 'admin@admin.com',
+        senha: hashedPassword,
+        role: 'admin',
+        ativo: true
+      }
+    })
+    console.log('✅ Usuário admin criado: admin@admin.com / 1234')
+  } else {
+    console.log('ℹ️ Usuário admin já existe.')
+  }
+
   console.log('🎉 Seed completed!')
 }
 

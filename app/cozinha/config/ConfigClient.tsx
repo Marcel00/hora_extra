@@ -136,7 +136,7 @@ export function ConfigClient({ config: configInicial }: ConfigClientProps) {
           </Card>
 
           {/* WhatsApp */}
-          <Card>
+          {/* <Card>
             <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">
               💬 Notificações WhatsApp
             </h2>
@@ -170,7 +170,7 @@ export function ConfigClient({ config: configInicial }: ConfigClientProps) {
                 </p>
               </div>
             </div>
-          </Card>
+          </Card> */}
 
           {/* Segurança */}
           <Card>
