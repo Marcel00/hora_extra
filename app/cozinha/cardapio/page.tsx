@@ -9,6 +9,11 @@ export default async function CardapioPage() {
           categoria: 'asc',
         },
       },
+      tamanhos: {
+        orderBy: {
+          preco: 'asc',
+        },
+      },
     },
     orderBy: {
       data: 'desc',

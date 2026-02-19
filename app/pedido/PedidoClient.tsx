@@ -321,38 +321,64 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
         </div>
 
         {/* Escolha do Tamanho */}
-        {cardapio.tamanhos && cardapio.tamanhos.length > 0 && (
-          <section className="space-y-4" ref={sizesRef}>
-            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 flex items-center">
-               1. Escolha o Tamanho
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              {cardapio.tamanhos.map((tamanho) => (
-                <div
-                  key={tamanho.id}
-                  onClick={() => setTamanhoSelecionado(tamanho)}
-                  className={`
-                    cursor-pointer p-6 rounded-2xl border-2 transition-all duration-200 flex flex-col items-center justify-center text-center
-                    ${tamanhoSelecionado?.id === tamanho.id
-                      ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 shadow-md scale-105'
-                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-orange-300'
-                    }
-                  `}
-                >
-                  <span className="text-xl font-bold text-gray-800 dark:text-gray-100">{tamanho.nome}</span>
-                  <span className="text-lg font-bold text-orange-600 dark:text-orange-500 mt-2">
-                    R$ {tamanho.preco.toFixed(2)}
-                  </span>
-                  {tamanhoSelecionado?.id === tamanho.id && (
-                    <div className="mt-2 text-orange-500 text-xs font-bold">
-                      ✓ SELECIONADO
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+        {(() => {
+          const isCebraspe = pontoEntrega.nome.toLowerCase().includes('cebraspe')
+          
+          // Filter sizes based on location
+          const tamanhosDisponiveis = cardapio.tamanhos?.filter(t => {
+            if (!t.ativo) return false
+            const nomeLower = t.nome.toLowerCase()
+            const isPequenaGrande = nomeLower.includes('pequena') || nomeLower.includes('grande')
+            
+            if (isCebraspe) {
+               // Cebraspe shows everything (or specifically P and G if that's the strict rule, but usually it means "they have access to these options")
+               return true 
+            } else {
+               // Non-Cebraspe does NOT show P and G
+               return !isPequenaGrande
+            }
+          }) || []
+
+          if (tamanhosDisponiveis.length === 0) return null
+
+          // Auto-select if only one option and none selected
+          if (tamanhosDisponiveis.length === 1 && !tamanhoSelecionado) {
+             setTamanhoSelecionado(tamanhosDisponiveis[0])
+          }
+
+          return (
+            <section className="space-y-4" ref={sizesRef}>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 flex items-center">
+                 1. Escolha o Tamanho
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                {tamanhosDisponiveis.map((tamanho) => (
+                  <div
+                    key={tamanho.id}
+                    onClick={() => setTamanhoSelecionado(tamanho)}
+                    className={`
+                      cursor-pointer p-6 rounded-2xl border-2 transition-all duration-200 flex flex-col items-center justify-center text-center
+                      ${tamanhoSelecionado?.id === tamanho.id
+                        ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 shadow-md scale-105'
+                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-orange-300'
+                      }
+                    `}
+                  >
+                    <span className="text-xl font-bold text-gray-800 dark:text-gray-100">{tamanho.nome}</span>
+                    <span className="text-lg font-bold text-orange-600 dark:text-orange-500 mt-2">
+                      R$ {tamanho.preco.toFixed(2)}
+                    </span>
+                    {tamanhoSelecionado?.id === tamanho.id && (
+                      <div className="mt-2 text-orange-500 text-xs font-bold">
+                        ✓ SELECIONADO
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )
+        })()}
 
         {/* Dados Pessoais */}
         <section className="space-y-4">

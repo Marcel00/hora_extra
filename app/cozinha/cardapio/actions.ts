@@ -99,3 +99,56 @@ export async function deleteItemCardapio(id: string) {
     return { success: false, error: 'Erro ao deletar item do cardápio' }
   }
 }
+
+// Ações para Tamanhos
+export async function createTamanho(data: {
+  cardapioId: string
+  nome: string
+  preco: number
+  ativo: boolean
+}) {
+  try {
+    const tamanho = await prisma.tamanho.create({
+      data,
+    })
+    
+    revalidatePath('/cozinha/cardapio')
+    return { success: true, tamanho }
+  } catch (error) {
+    console.error('Error creating tamanho:', error)
+    return { success: false, error: 'Erro ao criar tamanho' }
+  }
+}
+
+export async function updateTamanho(id: string, data: {
+  nome?: string
+  preco?: number
+  ativo?: boolean
+}) {
+  try {
+    const tamanho = await prisma.tamanho.update({
+      where: { id },
+      data,
+    })
+    
+    revalidatePath('/cozinha/cardapio')
+    return { success: true, tamanho }
+  } catch (error) {
+    console.error('Error updating tamanho:', error)
+    return { success: false, error: 'Erro ao atualizar tamanho' }
+  }
+}
+
+export async function deleteTamanho(id: string) {
+  try {
+    await prisma.tamanho.delete({
+      where: { id },
+    })
+    
+    revalidatePath('/cozinha/cardapio')
+    return { success: true }
+  } catch (error) {
+    console.error('Error deleting tamanho:', error)
+    return { success: false, error: 'Erro ao deletar tamanho' }
+  }
+}

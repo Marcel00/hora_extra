@@ -18,6 +18,9 @@ import {
   createItemCardapio,
   updateItemCardapio,
   deleteItemCardapio,
+  createTamanho,
+  updateTamanho,
+  deleteTamanho,
 } from './actions'
 
 interface ItemCardapio {
@@ -27,12 +30,21 @@ interface ItemCardapio {
   disponivel: boolean
 }
 
+interface Tamanho {
+  id: string
+  nome: string
+  preco: number
+  ativo: boolean
+  cardapioId: string
+}
+
 interface Cardapio {
   id: string
   data: Date
   ativo: boolean
   preco: number
   itens: ItemCardapio[]
+  tamanhos: Tamanho[]
 }
 
 interface CardapioClientProps {
@@ -51,6 +63,11 @@ export function CardapioClient({ cardapios }: CardapioClientProps) {
   const [novoCardapioPreco, setNovoCardapioPreco] = useState('20.00')
   const [novoItemNome, setNovoItemNome] = useState('')
   const [novoItemCategoria, setNovoItemCategoria] = useState('acompanhamento')
+
+  // Tamanho states
+  const [showNovoTamanho, setShowNovoTamanho] = useState<string | null>(null)
+  const [novoTamanhoNome, setNovoTamanhoNome] = useState('')
+  const [novoTamanhoPreco, setNovoTamanhoPreco] = useState('')
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -143,6 +160,39 @@ export function CardapioClient({ cardapios }: CardapioClientProps) {
       setEditingItem(null)
       setNovoItemNome('')
       setNovoItemCategoria('acompanhamento')
+      setShowNovoTamanho(null)
+      setNovoTamanhoNome('')
+      setNovoTamanhoPreco('')
+  }
+  
+  // Handlers para Tamanhos
+  const handleCreateTamanho = async (e: React.FormEvent, cardapioId: string) => {
+    e.preventDefault()
+    if (!novoTamanhoNome || !novoTamanhoPreco) return
+    
+    const result = await createTamanho({
+      cardapioId,
+      nome: novoTamanhoNome,
+      preco: parseFloat(novoTamanhoPreco),
+      ativo: true,
+    })
+    
+    if (result.success) {
+      resetForm()
+      router.refresh()
+    }
+  }
+
+  const handleDeleteTamanho = async (id: string) => {
+    if (confirm('Tem certeza que deseja remover este tamanho?')) {
+      await deleteTamanho(id)
+      router.refresh()
+    }
+  }
+
+  const handleToggleTamanho = async (id: string, ativo: boolean) => {
+    await updateTamanho(id, { ativo: !ativo })
+    router.refresh()
   }
 
   const handleToggleItemDisponivel = async (id: string, disponivel: boolean) => {
@@ -278,6 +328,105 @@ export function CardapioClient({ cardapios }: CardapioClientProps) {
                     🗑️ Deletar
                   </Button>
                 </div>
+              </div>
+
+              {/* Seção de Tamanhos */}
+              <div className="mb-6 p-4 bg-orange-50 dark:bg-orange-900/10 rounded-lg border border-orange-100 dark:border-orange-800/30">
+                <h4 className="text-lg font-bold text-orange-800 dark:text-orange-200 mb-3 flex items-center gap-2">
+                  📏 Tamanhos e Preços
+                </h4>
+                
+                <div className="space-y-2 mb-3">
+                  {cardapio.tamanhos && cardapio.tamanhos.map((tamanho) => (
+                    <div 
+                      key={tamanho.id} 
+                      className={`flex items-center justify-between p-2 roundedBg ${
+                        tamanho.ativo ? 'bg-white dark:bg-gray-800' : 'bg-gray-100 dark:bg-gray-700 opacity-60'
+                      } border border-orange-100 dark:border-orange-900/20`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="font-bold text-gray-800 dark:text-gray-200">{tamanho.nome}</span>
+                        <span className="text-orange-600 dark:text-orange-400 font-bold">R$ {tamanho.preco.toFixed(2)}</span>
+                        {!tamanho.ativo && <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">Inativo</span>}
+                      </div>
+                      <div className="flex gap-1">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={() => handleToggleTamanho(tamanho.id, tamanho.ativo)}
+                          title={tamanho.ativo ? 'Desativar' : 'Ativar'}
+                        >
+                          {tamanho.ativo ? '✅' : '🚫'}
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="text-red-600"
+                          onClick={() => handleDeleteTamanho(tamanho.id)}
+                        >
+                          🗑️
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {(!cardapio.tamanhos || cardapio.tamanhos.length === 0) && (
+                    <p className="text-sm text-orange-600/70 italic">
+                      Nenhum tamanho definido. O preço padrão será R$ {cardapio.preco.toFixed(2)}.
+                    </p>
+                  )}
+                </div>
+
+                {showNovoTamanho === cardapio.id ? (
+                  <form onSubmit={(e) => handleCreateTamanho(e, cardapio.id)} className="flex gap-2 items-end bg-white dark:bg-gray-800 p-2 rounded-lg border border-orange-200">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Nome (ex: P, M, G)"
+                        value={novoTamanhoNome}
+                        onChange={(e) => setNovoTamanhoNome(e.target.value)}
+                        required
+                        className="h-8 text-sm"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="w-24">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="Preço"
+                        value={novoTamanhoPreco}
+                        onChange={(e) => setNovoTamanhoPreco(e.target.value)}
+                        required
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <Button type="submit" variant="primary" size="sm" className="h-8">
+                      Salvar
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="secondary" 
+                      size="sm" 
+                      className="h-8"
+                      onClick={() => {
+                        setShowNovoTamanho(null)
+                        setNovoTamanhoNome('')
+                        setNovoTamanhoPreco('')
+                      }}
+                    >
+                      Can
+                    </Button>
+                  </form>
+                ) : (
+                  <Button 
+                    size="sm" 
+                    variant="secondary" 
+                    className="w-full border-dashed border-orange-300 text-orange-700 hover:bg-orange-50"
+                    onClick={() => setShowNovoTamanho(cardapio.id)}
+                  >
+                    ➕ Adicionar Tamanho
+                  </Button>
+                )}
               </div>
 
               {/* Itens por Categoria */}
