@@ -17,9 +17,12 @@ interface Pedido {
   telefone: string | null
   quantidade: number
   itens: string
+  acompanhamentosSelecionados?: string | null
+  itensRemovidos?: string | null
   observacoes: string | null
   valorTotal: number
   status: string
+  tamanhoNome?: string | null
   pontoEntrega: {
     nome: string
     horario: string
@@ -37,8 +40,7 @@ export function CozinhaClient({ pedidos: pedidosIniciais, pontosEntrega }: Cozin
   const { isAuthenticated, logout } = useAuthStore()
   const [pedidos, setPedidos] = useState(pedidosIniciais)
   const [filtroPonto, setFiltroPonto] = useState<string>('todos')
-  // const [printingOrder, setPrintingOrder] = useState<Pedido | null>(null) // Removido por enquanto se não for usar
-
+  const [filtroStatus, setFiltroStatus] = useState<'ativos' | 'pendente' | 'preparado' | 'entregue'>('ativos')
   const [printingOrder, setPrintingOrder] = useState<Pedido | null>(null)
 
   useEffect(() => {
@@ -69,18 +71,16 @@ export function CozinhaClient({ pedidos: pedidosIniciais, pontosEntrega }: Cozin
     }, 100)
   }
 
-  // Filtro padrão: Apenas pedidos "ativos" (pendente, preparado)
   const pedidosAtivos = pedidos.filter(p => ['pendente', 'preparado'].includes(p.status))
-  
-  // Filtragem local baseada na seleção
+
+  const matchStatus = (pedido: Pedido) => {
+    if (filtroStatus === 'ativos') return ['pendente', 'preparado'].includes(pedido.status)
+    return pedido.status === filtroStatus
+  }
+
   const pedidosFiltrados = pedidos.filter(pedido => {
-    // if (filtroStatus === 'todos') {
-    //   return ['pendente', 'preparado'].includes(pedido.status)
-    // }
-    // Apenas ativos nesta tela
-    const isActive = ['pendente', 'preparado'].includes(pedido.status)
     const matchPonto = filtroPonto === 'todos' || pedido.pontoEntrega.nome === filtroPonto
-    return isActive && matchPonto
+    return matchStatus(pedido) && matchPonto
   })
 
   const estatisticas = {
@@ -99,74 +99,103 @@ export function CozinhaClient({ pedidos: pedidosIniciais, pontosEntrega }: Cozin
       <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 no-print">
         <ThemeToggle />
         
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-6 sm:py-8 max-w-6xl">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-4xl font-bold text-orange-600 dark:text-orange-500 mb-2">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8">
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-4xl font-bold text-orange-600 dark:text-orange-500 mb-1 sm:mb-2 truncate">
                 👨‍🍳 Painel da Cozinha
               </h1>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
                 Gestão de pedidos em tempo real
               </p>
             </div>
-            <div className="flex gap-2 flex-wrap">
-              <Button onClick={() => router.push('/cozinha/historico')} variant="secondary">
+            <nav className="flex flex-wrap gap-2 sm:flex-nowrap" aria-label="Navegação">
+              <Button onClick={() => router.push('/cozinha/historico')} variant="secondary" className="min-h-[44px] sm:min-h-0 flex-1 sm:flex-none">
                 📜 Histórico
               </Button>
-              <Button onClick={() => router.push('/cozinha/cardapio')} variant="primary">
+              <Button onClick={() => router.push('/cozinha/cardapio')} variant="primary" className="min-h-[44px] sm:min-h-0 flex-1 sm:flex-none">
                 📋 Cardápio
               </Button>
-              <Button onClick={() => router.push('/cozinha/pontos')} variant="primary">
+              <Button onClick={() => router.push('/cozinha/pontos')} variant="primary" className="min-h-[44px] sm:min-h-0 flex-1 sm:flex-none">
                 📍 Pontos
               </Button>
-              <Button onClick={() => router.push('/cozinha/config')} variant="primary">
+              <Button onClick={() => router.push('/cozinha/config')} variant="primary" className="min-h-[44px] sm:min-h-0 flex-1 sm:flex-none">
                 ⚙️ Config
               </Button>
-              <Button onClick={handleLogout} variant="secondary">
+              <Button onClick={handleLogout} variant="secondary" className="min-h-[44px] sm:min-h-0 flex-1 sm:flex-none">
                 🚪 Sair
               </Button>
-            </div>
+            </nav>
           </div>
 
-          {/* Dashboard Status - Benchmarking IH7 */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <Card className="text-center bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800 relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-2 opacity-10 text-6xl">⏳</div>
-              <p className="text-sm font-bold text-yellow-800 dark:text-yellow-500 uppercase tracking-wider mb-1">Pendentes</p>
-              <p className="text-4xl font-black text-yellow-600 dark:text-yellow-500">{estatisticas.pendentes}</p>
-            </Card>
-            <Card className="text-center bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-2 opacity-10 text-6xl">🍳</div>
-              <p className="text-sm font-bold text-blue-800 dark:text-blue-500 uppercase tracking-wider mb-1">Preparando</p>
-              <p className="text-4xl font-black text-blue-600 dark:text-blue-500">{estatisticas.preparados}</p>
-            </Card>
-            
-             <Card className="text-center bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Ativos</p>
-              <p className="text-4xl font-bold text-gray-800 dark:text-gray-100">{estatisticas.totalAtivos}</p>
-            </Card>
-
-             <Card className="text-center bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800 opacity-75">
-              <p className="text-sm text-green-800 dark:text-green-500 mb-1">Entregues Hoje</p>
-              <p className="text-4xl font-bold text-green-600 dark:text-green-500">{estatisticas.entreguesHoje}</p>
-            </Card>
+          {/* Dashboard Status - clicável como filtro */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+            <button
+              type="button"
+              onClick={() => setFiltroStatus('pendente')}
+              className={`text-left rounded-xl border-2 transition-all duration-200 relative overflow-hidden p-3 sm:p-4 min-h-[80px] sm:min-h-0 ${
+                filtroStatus === 'pendente'
+                  ? 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-500 dark:border-yellow-500 ring-2 ring-yellow-400/50'
+                  : 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800 hover:border-yellow-400 dark:hover:border-yellow-600'
+              }`}
+            >
+              <div className="absolute top-0 right-0 p-1 sm:p-2 opacity-10 text-4xl sm:text-6xl">⏳</div>
+              <p className="text-xs sm:text-sm font-bold text-yellow-800 dark:text-yellow-500 uppercase tracking-wider mb-0.5 sm:mb-1">Pendentes</p>
+              <p className="text-2xl sm:text-4xl font-black text-yellow-600 dark:text-yellow-500">{estatisticas.pendentes}</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltroStatus('preparado')}
+              className={`text-left rounded-xl border-2 transition-all duration-200 relative overflow-hidden p-3 sm:p-4 min-h-[80px] sm:min-h-0 ${
+                filtroStatus === 'preparado'
+                  ? 'bg-blue-100 dark:bg-blue-900/30 border-blue-500 dark:border-blue-500 ring-2 ring-blue-400/50'
+                  : 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 hover:border-blue-400 dark:hover:border-blue-600'
+              }`}
+            >
+              <div className="absolute top-0 right-0 p-1 sm:p-2 opacity-10 text-4xl sm:text-6xl">🍳</div>
+              <p className="text-xs sm:text-sm font-bold text-blue-800 dark:text-blue-500 uppercase tracking-wider mb-0.5 sm:mb-1">Preparando</p>
+              <p className="text-2xl sm:text-4xl font-black text-blue-600 dark:text-blue-500">{estatisticas.preparados}</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltroStatus('ativos')}
+              className={`text-left rounded-xl border-2 transition-all duration-200 p-3 sm:p-4 min-h-[80px] sm:min-h-0 ${
+                filtroStatus === 'ativos'
+                  ? 'bg-gray-100 dark:bg-gray-700 border-gray-500 dark:border-gray-400 ring-2 ring-gray-400/50'
+                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600'
+              }`}
+            >
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-0.5 sm:mb-1">Total Ativos</p>
+              <p className="text-2xl sm:text-4xl font-bold text-gray-800 dark:text-gray-100">{estatisticas.totalAtivos}</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltroStatus('entregue')}
+              className={`text-left rounded-xl border-2 transition-all duration-200 p-3 sm:p-4 min-h-[80px] sm:min-h-0 ${
+                filtroStatus === 'entregue'
+                  ? 'bg-green-100 dark:bg-green-900/30 border-green-500 dark:border-green-500 ring-2 ring-green-400/50 opacity-100'
+                  : 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800 hover:border-green-400 dark:hover:border-green-600 opacity-75 hover:opacity-100'
+              }`}
+            >
+              <p className="text-xs sm:text-sm text-green-800 dark:text-green-500 mb-0.5 sm:mb-1">Entregues Hoje</p>
+              <p className="text-2xl sm:text-4xl font-bold text-green-600 dark:text-green-500">{estatisticas.entreguesHoje}</p>
+            </button>
           </div>
 
           {/* Filtros */}
-          <div className="flex justify-between items-center mb-6">
-             <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                📋 Pedidos em Aberto
-                <span className="bg-gray-200 dark:bg-gray-700 text-sm px-2 py-1 rounded-full text-gray-700 dark:text-gray-300">
+          <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6">
+             <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 shrink-0">
+                {filtroStatus === 'entregue' ? '✅ Entregues Hoje' : filtroStatus === 'pendente' ? '⏳ Pendentes' : filtroStatus === 'preparado' ? '🍳 Em Preparo' : '📋 Pedidos em Aberto'}
+                <span className="bg-gray-200 dark:bg-gray-700 text-xs sm:text-sm px-2 py-1 rounded-full text-gray-700 dark:text-gray-300">
                   {pedidosFiltrados.length}
                 </span>
              </h2>
-
-             <div className="flex gap-4">
+             <div className="w-full sm:w-auto sm:min-w-[200px]">
                 <Select
                   value={filtroPonto}
                   onChange={(e) => setFiltroPonto(e.target.value)}
-                  className="min-w-[200px]"
+                  className="w-full min-h-[44px]"
                 >
                   <option value="todos">Todos os Pontos</option>
                   {pontosEntrega.map((ponto) => (
@@ -179,12 +208,10 @@ export function CozinhaClient({ pedidos: pedidosIniciais, pontosEntrega }: Cozin
           </div>
 
           {/* Lista de Pedidos */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-                📋 Pedidos ({pedidosFiltrados.length})
-              </h2>
-            </div>
+          <div className="mb-6 sm:mb-8">
+            <h2 className="hidden sm:block mb-4 text-2xl font-bold text-gray-800 dark:text-gray-100">
+              📋 Pedidos ({pedidosFiltrados.length})
+            </h2>
 
             {pedidosFiltrados.length === 0 ? (
               <Card className="text-center py-12">

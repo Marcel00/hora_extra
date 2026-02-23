@@ -76,7 +76,7 @@ export function ConfirmationModal({ isOpen, onClose, onConfirm, loading, data }:
         <div className="p-6 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-700 flex flex-col gap-4">
           <div className="flex justify-between items-center mb-2">
             <span className="text-lg font-bold text-gray-700 dark:text-gray-300">Total Final</span>
-            <span className="text-3xl font-extrabold text-orange-600 dark:text-orange-500">
+            <span className="text-3xl font-extrabold text-orange-600 dark:text-orange-400">
               R$ {data.valorTotal.toFixed(2)}
             </span>
           </div>
@@ -92,7 +92,7 @@ export function ConfirmationModal({ isOpen, onClose, onConfirm, loading, data }:
             <Button 
               onClick={onConfirm} 
               disabled={loading}
-              className="h-12 text-lg font-bold bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/20"
+              className="h-12 text-lg font-bold bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-500 text-white shadow-lg shadow-green-600/20 dark:shadow-green-600/30"
             >
               {loading ? 'Enviando...' : 'Confirmar ✅'}
             </Button>

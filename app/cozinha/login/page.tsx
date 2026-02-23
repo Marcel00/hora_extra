@@ -28,11 +28,11 @@ export default function LoginCozinha() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-orange-600 dark:text-orange-500 mb-2">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-4xl font-bold text-orange-600 dark:text-orange-500 mb-2">
             🔐 Acesso Cozinha
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
             Digite a senha para acessar
           </p>
         </div>
@@ -53,6 +53,7 @@ export default function LoginCozinha() {
               placeholder="Digite a senha"
               autoFocus
               required
+              className="min-h-[44px]"
             />
             {erro && (
               <p className="mt-2 text-sm text-red-600 dark:text-red-400">
@@ -61,7 +62,7 @@ export default function LoginCozinha() {
             )}
           </div>
 
-          <Button type="submit" className="w-full" variant="primary">
+          <Button type="submit" className="w-full min-h-[48px]" variant="primary">
             Entrar
           </Button>
         </form>

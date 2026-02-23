@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { Button } from '@/components/ui/Button'
@@ -44,27 +44,98 @@ interface PedidoClientProps {
   pedidosAbertos: boolean
 }
 
+// Cores por ponto (igual ao card da cozinha): Cebraspe = azul, Quiosque Laranjinha = laranja
+const pontoTheme: Record<string, {
+  mainBg: string
+  headerBorder: string
+  nome: string
+  accent: string
+  accentHover: string
+  selectedBorder: string
+  selectedBg: string
+  selectedText: string
+  sectionBorder: string
+  inputFocus: string
+  buttonBg: string
+  buttonHover: string
+  spinner: string
+}> = {
+  Cebraspe: {
+    mainBg: 'bg-gray-50 dark:bg-gray-900',
+    headerBorder: 'border-blue-500 dark:border-blue-400',
+    nome: 'text-blue-700 dark:text-blue-400',
+    accent: 'text-blue-600 dark:text-blue-400',
+    accentHover: 'hover:bg-blue-50 dark:hover:bg-blue-900/20',
+    selectedBorder: 'border-blue-500 dark:border-blue-400',
+    selectedBg: 'bg-blue-50 dark:bg-blue-900/20',
+    selectedText: 'text-blue-700 dark:text-blue-400',
+    sectionBorder: 'border-l-blue-500',
+    inputFocus: 'focus:border-blue-500 dark:focus:border-blue-500',
+    buttonBg: 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700',
+    buttonHover: 'hover:border-blue-400 dark:hover:border-blue-500',
+    spinner: 'border-blue-500 border-t-transparent',
+  },
+  'Quiosque Laranjinha': {
+    mainBg: 'bg-gray-50 dark:bg-gray-900',
+    headerBorder: 'border-orange-500 dark:border-orange-400',
+    nome: 'text-orange-700 dark:text-orange-400',
+    accent: 'text-orange-600 dark:text-orange-500',
+    accentHover: 'hover:bg-orange-50 dark:hover:bg-orange-900/20',
+    selectedBorder: 'border-orange-500 dark:border-orange-400',
+    selectedBg: 'bg-orange-50 dark:bg-orange-900/20',
+    selectedText: 'text-orange-700 dark:text-orange-400',
+    sectionBorder: 'border-l-orange-500',
+    inputFocus: 'focus:border-orange-500 dark:focus:border-orange-600',
+    buttonBg: 'bg-orange-600 hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-700',
+    buttonHover: 'hover:border-orange-300 dark:hover:border-orange-700',
+    spinner: 'border-orange-500 border-t-transparent',
+  },
+}
+
+function getPontoTheme(pontoNome: string) {
+  return pontoTheme[pontoNome] ?? pontoTheme['Quiosque Laranjinha']
+}
+
 export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoClientProps) {
   const router = useRouter()
   const [tamanhoSelecionado, setTamanhoSelecionado] = useState<Tamanho | null>(() => {
+    if (!cardapio?.tamanhos || cardapio.tamanhos.length === 0) return null
+    // Sempre preferir "Grande" quando existir
+    const grande = cardapio.tamanhos.find(t => t.nome.toLowerCase() === 'grande')
+    if (grande) return grande
     // Se tiver apenas um tamanho, já seleciona ele
-    if (cardapio?.tamanhos && cardapio.tamanhos.length === 1) {
-      return cardapio.tamanhos[0]
-    }
+    if (cardapio.tamanhos.length === 1) return cardapio.tamanhos[0]
     return null
   })
   const [nomeCliente, setNomeCliente] = useState('')
   const [telefone, setTelefone] = useState('')
   const [quantidade, setQuantidade] = useState(1)
   const [itensSelecionados, setItensSelecionados] = useState<string[]>([])
+  const [acompanhamentosRemovidos, setAcompanhamentosRemovidos] = useState<string[]>([])
   const [observacoes, setObservacoes] = useState('')
   const [loading, setLoading] = useState(false)
   const [sucesso, setSucesso] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // Auto-scroll ref
   const bottomRef = useRef<HTMLDivElement>(null)
   const sizesRef = useRef<HTMLDivElement>(null)
+  const acompanhamentosInicializados = useRef(false)
+  const submittingRef = useRef(false)
+
+  // Acompanhamentos: começar todos marcados; clique desmarca/marca
+  useEffect(() => {
+    if (!cardapio?.itens || acompanhamentosInicializados.current) return
+    acompanhamentosInicializados.current = true
+    const acompanhamentos = cardapio.itens.filter(
+      (i) => i.categoria === 'acompanhamento' && i.disponivel
+    )
+    setItensSelecionados((prev) => {
+      if (prev.length > 0) return prev
+      return acompanhamentos.map((i) => i.nome)
+    })
+  }, [cardapio])
+
+  const temaPonto = getPontoTheme(pontoEntrega?.nome ?? 'Quiosque Laranjinha')
 
   if (!pedidosAbertos) {
     return (
@@ -108,9 +179,9 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
 
   if (sucesso) {
     return (
-      <main className="min-h-screen bg-linear-to-br from-orange-50 via-white to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
+      <main className={`min-h-screen ${temaPonto.mainBg} flex items-center justify-center p-4`}>
         <ThemeToggle />
-        <Card className="max-w-md text-center">
+        <Card className={`max-w-md text-center border-2 ${temaPonto.selectedBorder}`}>
           <div className="text-6xl mb-4">✅</div>
           <h1 className="text-3xl font-bold text-green-600 dark:text-green-400 mb-4">
             Pedido Confirmado!
@@ -121,7 +192,10 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
           <p className="text-gray-700 dark:text-gray-300 mb-6">
             Seu pedido foi recebido com sucesso e será entregue em <strong>{pontoEntrega.nome}</strong> às <strong>{pontoEntrega.horario}</strong>.
           </p>
-          <Button onClick={() => router.push('/')} variant="primary" className="w-full">
+          <Button
+            onClick={() => router.push('/')}
+            className={`w-full ${temaPonto.buttonBg}`}
+          >
             Fazer Outro Pedido
           </Button>
         </Card>
@@ -130,7 +204,6 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
   }
 
   const toggleItem = (itemNome: string, categoria: string) => {
-    // Get all items in the same category that are selected
     const itemsInCategory = cardapio.itens.filter(
       (i) => i.categoria === categoria && i.disponivel
     )
@@ -138,11 +211,45 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
       itemsInCategory.some((i) => i.nome === nome)
     )
 
-    // Find the maxSelecoes for this category (use first item's maxSelecoes)
+    // Proteínas: permitir apenas uma opção; ao escolher outra, a anterior é desmarcada
+    if (categoria === 'proteina') {
+      setItensSelecionados((prev) => {
+        const semProteinas = prev.filter(
+          (nome) => !itemsInCategory.some((i) => i.nome === nome)
+        )
+        if (prev.includes(itemNome)) {
+          return semProteinas
+        }
+        return [...semProteinas, itemNome]
+      })
+      return
+    }
+
+    // Extras: sem limite de quantidade; cada um soma R$ 10 no cálculo do preço
+    if (categoria === 'extra') {
+      setItensSelecionados((prev) =>
+        prev.includes(itemNome)
+          ? prev.filter((i) => i !== itemNome)
+          : [...prev, itemNome]
+      )
+      return
+    }
+
+    // Acompanhamentos: ao desmarcar, registrar em acompanhamentosRemovidos (para a cozinha ver o que não colocar)
+    if (categoria === 'acompanhamento') {
+      setItensSelecionados((prev) => {
+        if (prev.includes(itemNome)) {
+          setAcompanhamentosRemovidos((r) => (r.includes(itemNome) ? r : [...r, itemNome]))
+          return prev.filter((i) => i !== itemNome)
+        }
+        setAcompanhamentosRemovidos((r) => r.filter((i) => i !== itemNome))
+        return [...prev, itemNome]
+      })
+      return
+    }
+
     const maxSelecoes =
       itemsInCategory.find((i) => i.nome === itemNome)?.maxSelecoes || 99
-
-    // If trying to select and already at max
     if (
       !itensSelecionados.includes(itemNome) &&
       selectedInCategory.length >= maxSelecoes
@@ -225,26 +332,38 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
   }
 
   const handleConfirmOrder = async () => {
+    if (submittingRef.current) return
+    submittingRef.current = true
     setLoading(true)
-    const result = await createPedido({
-      nomeCliente,
-      telefone,
-      quantidade,
-      tamanhoId: tamanhoSelecionado?.id,
-      tamanhoNome: tamanhoSelecionado?.nome,
-      itens: itensSelecionados,
-      observacoes,
-      valorTotal,
-      pontoEntregaId: pontoEntrega.id,
-    })
-
-    setLoading(false)
     setIsModalOpen(false)
 
-    if (result.success) {
-      setSucesso(true)
-    } else {
-      alert('Erro ao criar pedido. Tente novamente.')
+    try {
+      const acompanhamentosSelecionados = itensSelecionados.filter((nome) =>
+        cardapio.itens.some((i) => i.categoria === 'acompanhamento' && i.nome === nome)
+      )
+      const result = await createPedido({
+        nomeCliente,
+        telefone,
+        quantidade,
+        tamanhoId: tamanhoSelecionado?.id,
+        tamanhoNome: tamanhoSelecionado?.nome,
+        itens: itensSelecionados,
+        acompanhamentosSelecionados,
+        itensRemovidos: acompanhamentosRemovidos,
+        observacoes,
+        valorTotal,
+        pontoEntregaId: pontoEntrega.id,
+      })
+
+      if (result.success) {
+        setSucesso(true)
+      } else {
+        setIsModalOpen(true)
+        alert(result.error ?? 'Erro ao criar pedido. Tente novamente.')
+      }
+    } finally {
+      setLoading(false)
+      submittingRef.current = false
     }
   }
 
@@ -266,23 +385,23 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
     },
   }
 
-  // Helper component for Selectable Card
+  // Helper component for Selectable Card (usa cores do ponto)
   const SelectableCard = ({ label, selected, onClick }: { label: string, selected: boolean, onClick: () => void }) => (
     <div 
       onClick={onClick}
       className={`
         cursor-pointer rounded-xl p-4 border-2 transition-all duration-200 flex flex-col items-center justify-center text-center h-24
         ${selected 
-          ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 shadow-md scale-105' 
-          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-orange-300 dark:hover:border-orange-700'
+          ? `${temaPonto.selectedBorder} ${temaPonto.selectedBg} shadow-md scale-105` 
+          : `border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 ${temaPonto.buttonHover}`
         }
       `}
     >
-      <span className={`font-semibold ${selected ? 'text-orange-700 dark:text-orange-400' : 'text-gray-700 dark:text-gray-300'}`}>
+      <span className={`font-semibold ${selected ? temaPonto.selectedText : 'text-gray-700 dark:text-gray-300'}`}>
         {label}
       </span>
       {selected && (
-        <div className="mt-1 text-orange-500 text-xs font-bold">
+        <div className={`mt-1 ${temaPonto.accent} text-xs font-bold`}>
           ✓ SELECIONADO
         </div>
       )}
@@ -290,17 +409,26 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
   )
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-32">
+    <main className={`min-h-screen ${temaPonto.mainBg} pb-32`}>
       <ThemeToggle />
-      
+
+      {/* Overlay "Enviando..." assim que o usuário confirma (feedback imediato) */}
+      {loading && (
+        <div className="fixed inset-0 z-[90] flex flex-col items-center justify-center gap-4 bg-gray-900/80 dark:bg-gray-950/90 backdrop-blur-sm">
+          <div className={`w-12 h-12 border-4 rounded-full animate-spin ${temaPonto.spinner}`} />
+          <p className="text-white text-lg font-semibold">Enviando seu pedido...</p>
+          <p className="text-gray-400 text-sm">Aguarde um instante</p>
+        </div>
+      )}
+
       {/* Sticky Top Header */}
-      <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-xs">
-        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-          <div>
-            <h2 className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">Unidade</h2>
-            <p className="text-lg font-bold text-gray-800 dark:text-gray-100">{pontoEntrega.nome}</p>
+      <div className={`sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b-4 ${temaPonto.headerBorder} shadow-xs`}>
+        <div className="container mx-auto px-4 py-3 flex justify-between items-center gap-2">
+          <div className="min-w-0">
+            <h2 className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">Unidade</h2>
+            <p className={`text-base sm:text-lg font-bold truncate ${temaPonto.nome}`}>{pontoEntrega.nome}</p>
           </div>
-          <div className="text-right">
+          <div className="text-right shrink-0">
             <p className="text-xs text-green-600 dark:text-green-500 font-bold bg-green-100 dark:bg-green-900 px-2 py-1 rounded-full">
               • Aberto Agora
             </p>
@@ -308,14 +436,14 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6 max-w-2xl space-y-8">
+      <div className="container mx-auto px-4 py-4 sm:py-6 max-w-2xl space-y-6 sm:space-y-8">
         
         {/* Intro */}
-        <div className="mt-4">
-          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">
+        <div className="mt-2 sm:mt-4">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white mb-2">
             Monte sua Marmita 🍱
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 text-lg">
+          <p className="text-gray-600 dark:text-gray-400 text-base sm:text-lg">
             Escolha os ingredientes fresquinhos de hoje.
           </p>
         </div>
@@ -359,17 +487,17 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
                     className={`
                       cursor-pointer p-6 rounded-2xl border-2 transition-all duration-200 flex flex-col items-center justify-center text-center
                       ${tamanhoSelecionado?.id === tamanho.id
-                        ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 shadow-md scale-105'
-                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-orange-300'
+                        ? `${temaPonto.selectedBorder} ${temaPonto.selectedBg} shadow-md scale-105`
+                        : `border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 ${temaPonto.buttonHover}`
                       }
                     `}
                   >
                     <span className="text-xl font-bold text-gray-800 dark:text-gray-100">{tamanho.nome}</span>
-                    <span className="text-lg font-bold text-orange-600 dark:text-orange-500 mt-2">
+                    <span className={`text-lg font-bold mt-2 ${temaPonto.accent}`}>
                       R$ {tamanho.preco.toFixed(2)}
                     </span>
                     {tamanhoSelecionado?.id === tamanho.id && (
-                      <div className="mt-2 text-orange-500 text-xs font-bold">
+                      <div className={`mt-2 ${temaPonto.accent} text-xs font-bold`}>
                         ✓ SELECIONADO
                       </div>
                     )}
@@ -435,14 +563,14 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
               <div className="flex items-center gap-4 bg-gray-100 dark:bg-gray-900 rounded-full px-4 py-2">
                 <button 
                   onClick={() => setQuantidade(Math.max(1, quantidade - 1))}
-                  className="w-10 h-10 rounded-full bg-white dark:bg-gray-800 shadow-xs flex items-center justify-center text-xl font-bold text-orange-600"
+                  className={`w-10 h-10 rounded-full bg-white dark:bg-gray-800 shadow-xs flex items-center justify-center text-xl font-bold ${temaPonto.accent}`}
                 >
                   -
                 </button>
                 <span className="text-2xl font-bold w-8 text-center">{quantidade}</span>
                 <button 
                   onClick={() => setQuantidade(Math.min(10, quantidade + 1))}
-                  className="w-10 h-10 rounded-full bg-white dark:bg-gray-800 shadow-xs flex items-center justify-center text-xl font-bold text-orange-600"
+                  className={`w-10 h-10 rounded-full bg-white dark:bg-gray-800 shadow-xs flex items-center justify-center text-xl font-bold ${temaPonto.accent}`}
                 >
                   +
                 </button>
@@ -460,7 +588,7 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
              if (itens.length === 0) return null
              return (
               <section key={key} className="space-y-4">
-                <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 border-l-4 border-orange-500 pl-3">
+                <h3 className={`text-xl font-bold text-gray-800 dark:text-gray-200 border-l-4 pl-3 ${temaPonto.sectionBorder}`}>
                   {label}
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -487,7 +615,7 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
             value={observacoes}
             onChange={(e) => setObservacoes(e.target.value)}
             placeholder="Ex: Sem cebola, capricha na farofa..."
-            className="w-full px-4 py-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-orange-500 dark:focus:border-orange-600 transition-colors min-h-32 text-lg shadow-xs"
+            className={`w-full px-4 py-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none ${temaPonto.inputFocus} transition-colors min-h-32 text-lg shadow-xs`}
           />
         </section>
 
@@ -499,11 +627,11 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
         <div className="container mx-auto max-w-2xl flex items-center justify-between gap-4">
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Total do Pedido</p>
-            <p className="text-2xl font-extrabold text-orange-600 dark:text-orange-500">
+            <p className={`text-2xl font-extrabold ${temaPonto.accent}`}>
               R$ {valorTotal.toFixed(2)}
             </p>
             {(calculoPreco.detalhes?.proteinasExtras.valor > 0 || calculoPreco.detalhes?.extras.valor > 0) && (
-              <p className="text-xs text-orange-600 dark:text-orange-400">
+              <p className={`text-xs ${temaPonto.accent}`}>
                 (Inclui +R$ {(calculoPreco.detalhes.proteinasExtras.valor + calculoPreco.detalhes.extras.valor).toFixed(2)} de adicionais)
               </p>
             )}
@@ -511,7 +639,7 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
           <Button 
             onClick={() => handleOpenModal()} 
             disabled={loading || itensSelecionados.length === 0}
-            className="flex-1 max-w-xs h-14 text-lg font-bold rounded-full shadow-lg bg-orange-600 hover:bg-orange-700 text-white transition-all transform hover:scale-105 active:scale-95"
+            className={`flex-1 max-w-xs h-14 text-lg font-bold rounded-full shadow-lg text-white transition-all transform hover:scale-105 active:scale-95 ${temaPonto.buttonBg}`}
           >
             {loading ? 'Enviando...' : `Continuar ➔`}
           </Button>

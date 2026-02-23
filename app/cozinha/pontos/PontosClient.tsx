@@ -112,39 +112,39 @@ export function PontosClient({ pontos: pontosIniciais }: PontosClientProps) {
     <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <ThemeToggle />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6 sm:py-8 max-w-4xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-orange-600 dark:text-orange-500 mb-2">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-4xl font-bold text-orange-600 dark:text-orange-500 mb-1 sm:mb-2">
               📍 Pontos de Entrega
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
               Gerencie os locais de entrega
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={() => router.push('/cozinha')} variant="secondary">
+          <div className="flex gap-2 shrink-0">
+            <Button onClick={() => router.push('/cozinha')} variant="secondary" className="min-h-[44px] flex-1 sm:flex-none">
               ← Voltar
             </Button>
-            <Button onClick={handleLogout} variant="secondary">
+            <Button onClick={handleLogout} variant="secondary" className="min-h-[44px] flex-1 sm:flex-none">
               🚪 Sair
             </Button>
           </div>
         </div>
 
         {/* Novo Ponto */}
-        <Card className="mb-8">
+        <Card className="mb-6 sm:mb-8">
           {!showNovo ? (
-            <Button onClick={() => setShowNovo(true)} variant="primary" className="w-full">
+            <Button onClick={() => setShowNovo(true)} variant="primary" className="w-full min-h-[48px]">
               ➕ Novo Ponto de Entrega
             </Button>
           ) : (
             <form onSubmit={handleCreate} className="space-y-4">
-              <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100">
                 Criar Novo Ponto
               </h3>
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Nome do Local
@@ -155,6 +155,7 @@ export function PontosClient({ pontos: pontosIniciais }: PontosClientProps) {
                     onChange={(e) => setNovoNome(e.target.value)}
                     placeholder="Ex: Quiosque Laranjinha"
                     required
+                    className="min-h-[44px]"
                   />
                 </div>
                 <div>
@@ -167,17 +168,19 @@ export function PontosClient({ pontos: pontosIniciais }: PontosClientProps) {
                     onChange={(e) => setNovoHorario(e.target.value)}
                     placeholder="Ex: 11h30"
                     required
+                    className="min-h-[44px]"
                   />
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Button type="submit" variant="primary">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button type="submit" variant="primary" className="min-h-[44px] flex-1 sm:flex-none">
                   Criar Ponto
                 </Button>
                 <Button
                   type="button"
                   onClick={() => setShowNovo(false)}
                   variant="secondary"
+                  className="min-h-[44px] flex-1 sm:flex-none"
                 >
                   Cancelar
                 </Button>
@@ -192,10 +195,10 @@ export function PontosClient({ pontos: pontosIniciais }: PontosClientProps) {
             <Card key={ponto.id}>
               {editando === ponto.id ? (
                 <div className="space-y-4">
-                  <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100">
                     Editar Ponto
                   </h3>
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                         Nome do Local
@@ -205,6 +208,7 @@ export function PontosClient({ pontos: pontosIniciais }: PontosClientProps) {
                         value={editNome}
                         onChange={(e) => setEditNome(e.target.value)}
                         required
+                        className="min-h-[44px]"
                       />
                     </div>
                     <div>
@@ -216,23 +220,24 @@ export function PontosClient({ pontos: pontosIniciais }: PontosClientProps) {
                         value={editHorario}
                         onChange={(e) => setEditHorario(e.target.value)}
                         required
+                        className="min-h-[44px]"
                       />
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button onClick={() => handleUpdate(ponto.id)} variant="primary">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button onClick={() => handleUpdate(ponto.id)} variant="primary" className="min-h-[44px] flex-1 sm:flex-none">
                       Salvar
                     </Button>
-                    <Button onClick={() => setEditando(null)} variant="secondary">
+                    <Button onClick={() => setEditando(null)} variant="secondary" className="min-h-[44px] flex-1 sm:flex-none">
                       Cancelar
                     </Button>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+                      <h3 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">
                         📍 {ponto.nome}
                       </h3>
                       <Badge variant={ponto.ativo ? 'entregue' : 'default'}>
@@ -242,29 +247,29 @@ export function PontosClient({ pontos: pontosIniciais }: PontosClientProps) {
                     <p className="text-gray-600 dark:text-gray-400">
                       🕐 Entrega às {ponto.horario}
                     </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+                    <p className="text-sm sm:text-base text-gray-500 dark:text-gray-500 mt-1">
                       {ponto._count.pedidos} pedido(s) associado(s)
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2 shrink-0 self-end sm:self-auto">
                     <Button
                       onClick={() => startEdit(ponto)}
                       variant="secondary"
-                      className="text-sm"
+                      className="text-sm min-h-[44px] min-w-[44px] sm:min-w-0"
                     >
                       ✏️ Editar
                     </Button>
                     <Button
                       onClick={() => handleToggleAtivo(ponto.id, ponto.ativo)}
                       variant="secondary"
-                      className="text-sm"
+                      className="text-sm min-h-[44px] min-w-[44px] sm:min-w-0"
                     >
                       {ponto.ativo ? '❌ Desativar' : '✅ Ativar'}
                     </Button>
                     <Button
                       onClick={() => handleDelete(ponto.id)}
                       variant="danger"
-                      className="text-sm"
+                      className="text-sm min-h-[44px] min-w-[44px] sm:min-w-0"
                     >
                       🗑️ Deletar
                     </Button>

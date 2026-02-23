@@ -16,6 +16,8 @@ interface Pedido {
   telefone: string | null
   quantidade: number
   itens: string
+  acompanhamentosSelecionados?: string | null
+  itensRemovidos?: string | null
   observacoes: string | null
   valorTotal: number
   status: string
@@ -91,30 +93,30 @@ export function HistoricoClient({ pedidos: pedidosIniciais, pontosEntrega }: His
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <ThemeToggle />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6 sm:py-8 max-w-4xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-100 mb-1 sm:mb-2">
               📜 Histórico de Pedidos
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
               Visualize pedidos entregues e cancelados
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={() => router.push('/cozinha')} variant="primary">
+          <div className="flex gap-2 shrink-0">
+            <Button onClick={() => router.push('/cozinha')} variant="primary" className="min-h-[44px] flex-1 sm:flex-none">
               ⬅️ Voltar para Cozinha
             </Button>
-            <Button onClick={handleLogout} variant="secondary">
+            <Button onClick={handleLogout} variant="secondary" className="min-h-[44px] flex-1 sm:flex-none">
               🚪 Sair
             </Button>
           </div>
         </div>
 
         {/* Filtros */}
-        <Card className="mb-8">
-          <div className="flex flex-col md:flex-row gap-4 items-end">
+        <Card className="mb-6 sm:mb-8">
+          <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-end">
              <div className="w-full md:w-1/3">
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 Status
@@ -122,6 +124,7 @@ export function HistoricoClient({ pedidos: pedidosIniciais, pontosEntrega }: His
               <Select
                 value={filtroStatus}
                 onChange={(e) => setFiltroStatus(e.target.value)}
+                className="min-h-[44px] w-full"
               >
                 <option value="todos">Entregues e Cancelados</option>
                 <option value="entregue">Apenas Entregues</option>
@@ -136,6 +139,7 @@ export function HistoricoClient({ pedidos: pedidosIniciais, pontosEntrega }: His
               <Select
                 value={filtroPonto}
                 onChange={(e) => setFiltroPonto(e.target.value)}
+                className="min-h-[44px] w-full"
               >
                 <option value="todos">Todos</option>
                 {pontosEntrega.map((ponto) => (

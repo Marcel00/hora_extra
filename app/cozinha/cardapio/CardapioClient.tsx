@@ -221,39 +221,39 @@ export function CardapioClient({ cardapios }: CardapioClientProps) {
     <main className="min-h-screen bg-linear-to-br from-orange-50 via-white to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <ThemeToggle />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6 sm:py-8 max-w-4xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-orange-600 dark:text-orange-500 mb-2">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-4xl font-bold text-orange-600 dark:text-orange-500 mb-1 sm:mb-2">
               📋 Gerenciar Cardápio
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
               Crie e gerencie os cardápios diários
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={() => router.push('/cozinha')} variant="secondary">
+          <div className="flex gap-2 shrink-0">
+            <Button onClick={() => router.push('/cozinha')} variant="secondary" className="min-h-[44px] flex-1 sm:flex-none">
               ← Voltar
             </Button>
-            <Button onClick={handleLogout} variant="secondary">
+            <Button onClick={handleLogout} variant="secondary" className="min-h-[44px] flex-1 sm:flex-none">
               🚪 Sair
             </Button>
           </div>
         </div>
 
         {/* Novo Cardápio */}
-        <Card className="mb-8">
+        <Card className="mb-6 sm:mb-8">
           {!showNovoCardapio ? (
-            <Button onClick={() => setShowNovoCardapio(true)} variant="primary" className="w-full">
+            <Button onClick={() => setShowNovoCardapio(true)} variant="primary" className="w-full min-h-[48px]">
               ➕ Novo Cardápio
             </Button>
           ) : (
             <form onSubmit={handleCreateCardapio} className="space-y-4">
-              <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100">
                 Criar Novo Cardápio
               </h3>
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Data
@@ -278,14 +278,15 @@ export function CardapioClient({ cardapios }: CardapioClientProps) {
                   />
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Button type="submit" variant="primary">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button type="submit" variant="primary" className="min-h-[44px] flex-1 sm:flex-none">
                   Criar Cardápio
                 </Button>
                 <Button
                   type="button"
                   onClick={() => setShowNovoCardapio(false)}
                   variant="secondary"
+                  className="min-h-[44px] flex-1 sm:flex-none"
                 >
                   Cancelar
                 </Button>
@@ -298,32 +299,32 @@ export function CardapioClient({ cardapios }: CardapioClientProps) {
         <div className="space-y-6">
           {cardapios.map((cardapio) => (
             <Card key={cardapio.id}>
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-4">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">
                       {format(new Date(cardapio.data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                     </h3>
                     <Badge variant={cardapio.ativo ? 'entregue' : 'default'}>
                       {cardapio.ativo ? 'Ativo' : 'Inativo'}
                     </Badge>
                   </div>
-                  <p className="text-lg font-semibold text-orange-600 dark:text-orange-500">
+                  <p className="text-base sm:text-lg font-semibold text-orange-600 dark:text-orange-500">
                     R$ {cardapio.preco.toFixed(2)}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2 shrink-0 self-end sm:self-auto">
                   <Button
                     onClick={() => handleToggleCardapioAtivo(cardapio.id, cardapio.ativo)}
                     variant="secondary"
-                    className="text-sm"
+                    className="text-sm min-h-[44px] min-w-[44px] sm:min-w-0"
                   >
                     {cardapio.ativo ? '❌ Desativar' : '✅ Ativar'}
                   </Button>
                   <Button
                     onClick={() => handleDeleteCardapio(cardapio.id)}
                     variant="danger"
-                    className="text-sm"
+                    className="text-sm min-h-[44px] min-w-[44px] sm:min-w-0"
                   >
                     🗑️ Deletar
                   </Button>
@@ -340,28 +341,29 @@ export function CardapioClient({ cardapios }: CardapioClientProps) {
                   {cardapio.tamanhos && cardapio.tamanhos.map((tamanho) => (
                     <div 
                       key={tamanho.id} 
-                      className={`flex items-center justify-between p-2 roundedBg ${
+                      className={`flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-2 sm:p-3 rounded-lg ${
                         tamanho.ativo ? 'bg-white dark:bg-gray-800' : 'bg-gray-100 dark:bg-gray-700 opacity-60'
                       } border border-orange-100 dark:border-orange-900/20`}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
                         <span className="font-bold text-gray-800 dark:text-gray-200">{tamanho.nome}</span>
                         <span className="text-orange-600 dark:text-orange-400 font-bold">R$ {tamanho.preco.toFixed(2)}</span>
                         {!tamanho.ativo && <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">Inativo</span>}
                       </div>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 shrink-0">
                         <Button 
                           size="sm" 
                           variant="ghost" 
                           onClick={() => handleToggleTamanho(tamanho.id, tamanho.ativo)}
                           title={tamanho.ativo ? 'Desativar' : 'Ativar'}
+                          className="min-h-[40px] min-w-[40px]"
                         >
                           {tamanho.ativo ? '✅' : '🚫'}
                         </Button>
                         <Button 
                           size="sm" 
                           variant="ghost" 
-                          className="text-red-600"
+                          className="text-red-600 min-h-[40px] min-w-[40px]"
                           onClick={() => handleDeleteTamanho(tamanho.id)}
                         >
                           🗑️
@@ -378,18 +380,18 @@ export function CardapioClient({ cardapios }: CardapioClientProps) {
                 </div>
 
                 {showNovoTamanho === cardapio.id ? (
-                  <form onSubmit={(e) => handleCreateTamanho(e, cardapio.id)} className="flex gap-2 items-end bg-white dark:bg-gray-800 p-2 rounded-lg border border-orange-200">
-                    <div className="flex-1">
+                  <form onSubmit={(e) => handleCreateTamanho(e, cardapio.id)} className="flex flex-col gap-2 sm:flex-row sm:items-end bg-white dark:bg-gray-800 p-2 sm:p-3 rounded-lg border border-orange-200">
+                    <div className="flex-1 w-full sm:min-w-0">
                       <Input
                         placeholder="Nome (ex: P, M, G)"
                         value={novoTamanhoNome}
                         onChange={(e) => setNovoTamanhoNome(e.target.value)}
                         required
-                        className="h-8 text-sm"
+                        className="min-h-[44px] text-sm"
                         autoFocus
                       />
                     </div>
-                    <div className="w-24">
+                    <div className="w-full sm:w-24">
                       <Input
                         type="number"
                         step="0.01"
@@ -397,31 +399,33 @@ export function CardapioClient({ cardapios }: CardapioClientProps) {
                         value={novoTamanhoPreco}
                         onChange={(e) => setNovoTamanhoPreco(e.target.value)}
                         required
-                        className="h-8 text-sm"
+                        className="min-h-[44px] text-sm"
                       />
                     </div>
-                    <Button type="submit" variant="primary" size="sm" className="h-8">
-                      Salvar
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="secondary" 
-                      size="sm" 
-                      className="h-8"
-                      onClick={() => {
-                        setShowNovoTamanho(null)
-                        setNovoTamanhoNome('')
-                        setNovoTamanhoPreco('')
-                      }}
-                    >
-                      Can
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button type="submit" variant="primary" size="sm" className="min-h-[44px] flex-1 sm:flex-none">
+                        Salvar
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="secondary" 
+                        size="sm" 
+                        className="min-h-[44px] flex-1 sm:flex-none"
+                        onClick={() => {
+                          setShowNovoTamanho(null)
+                          setNovoTamanhoNome('')
+                          setNovoTamanhoPreco('')
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
                   </form>
                 ) : (
                   <Button 
                     size="sm" 
                     variant="secondary" 
-                    className="w-full border-dashed border-orange-300 text-orange-700 hover:bg-orange-50"
+                    className="w-full min-h-[44px] border-dashed border-orange-300 text-orange-700 hover:bg-orange-50"
                     onClick={() => setShowNovoTamanho(cardapio.id)}
                   >
                     ➕ Adicionar Tamanho
@@ -443,17 +447,17 @@ export function CardapioClient({ cardapios }: CardapioClientProps) {
                         {itens.map((item) => (
                           <div
                             key={item.id}
-                            className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                            className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
                           >
-                            <div className="flex items-center gap-3">
-                              <span className="text-gray-800 dark:text-gray-200">{item.nome}</span>
+                            <div className="flex items-center gap-3 min-w-0">
+                              <span className="text-gray-800 dark:text-gray-200 font-medium">{item.nome}</span>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2 shrink-0">
                               <Button
                                 onClick={() => handleToggleItemDisponivel(item.id, item.disponivel)}
                                 size="sm"
                                 variant={item.disponivel ? "secondary" : "danger"}
-                                className="text-xs"
+                                className="text-xs min-h-[40px] min-w-[40px] sm:min-w-0"
                                 title="Define se o item aparece para o cliente"
                               >
                                 {item.disponivel ? '✅ Disponível' : '❌ Esgotado'}
@@ -462,7 +466,7 @@ export function CardapioClient({ cardapios }: CardapioClientProps) {
                                 onClick={() => startEditing(item, cardapio.id)}
                                 size="sm"
                                 variant="ghost"
-                                className="text-xs"
+                                className="text-xs min-h-[40px] min-w-[40px]"
                                 title="Editar nome"
                               >
                                 ✏️
@@ -471,7 +475,7 @@ export function CardapioClient({ cardapios }: CardapioClientProps) {
                                 onClick={() => handleDeleteItem(item.id)}
                                 variant="ghost"
                                 size="sm"
-                                className="text-xs text-red-600 hover:bg-red-50"
+                                className="text-xs text-red-600 hover:bg-red-50 min-h-[40px] min-w-[40px]"
                                 title="Excluir item"
                               >
                                 🗑️
@@ -496,15 +500,15 @@ export function CardapioClient({ cardapios }: CardapioClientProps) {
                               autoFocus
                               required
                             />
-                            <div className="flex gap-2">
-                              <Button type="submit" variant="primary" className="text-sm">
+                            <div className="flex flex-col sm:flex-row gap-2">
+                              <Button type="submit" variant="primary" className="text-sm min-h-[44px] flex-1 sm:flex-none">
                                 {editingItem ? 'Salvar' : 'Adicionar'}
                               </Button>
                               <Button
                                 type="button"
                                 onClick={handleCancelEdit}
                                 variant="secondary"
-                                className="text-sm"
+                                className="text-sm min-h-[44px] flex-1 sm:flex-none"
                               >
                                 Cancelar
                               </Button>

@@ -79,22 +79,22 @@ export function ConfigClient({ config: configInicial }: ConfigClientProps) {
     <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <ThemeToggle />
       
-      <div className="container mx-auto px-4 py-8 max-w-3xl">
+      <div className="container mx-auto px-4 py-6 sm:py-8 max-w-3xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-orange-600 dark:text-orange-500 mb-2">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-4xl font-bold text-orange-600 dark:text-orange-500 mb-1 sm:mb-2">
               ⚙️ Configurações
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
               Configure o sistema
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={() => router.push('/cozinha')} variant="secondary">
+          <div className="flex gap-2 shrink-0">
+            <Button onClick={() => router.push('/cozinha')} variant="secondary" className="min-h-[44px] flex-1 sm:flex-none">
               ← Voltar
             </Button>
-            <Button onClick={handleLogout} variant="secondary">
+            <Button onClick={handleLogout} variant="secondary" className="min-h-[44px] flex-1 sm:flex-none">
               🚪 Sair
             </Button>
           </div>
@@ -103,10 +103,10 @@ export function ConfigClient({ config: configInicial }: ConfigClientProps) {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Horários */}
           <Card>
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">
               🕐 Horários de Funcionamento
             </h2>
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Horário de Abertura
@@ -116,6 +116,7 @@ export function ConfigClient({ config: configInicial }: ConfigClientProps) {
                   value={horarioAbertura}
                   onChange={(e) => setHorarioAbertura(e.target.value)}
                   required
+                  className="min-h-[44px]"
                 />
               </div>
               <div>
@@ -127,6 +128,7 @@ export function ConfigClient({ config: configInicial }: ConfigClientProps) {
                   value={horarioFechamento}
                   onChange={(e) => setHorarioFechamento(e.target.value)}
                   required
+                  className="min-h-[44px]"
                 />
               </div>
             </div>
@@ -174,7 +176,7 @@ export function ConfigClient({ config: configInicial }: ConfigClientProps) {
 
           {/* Segurança */}
           <Card>
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">
               🔐 Segurança
             </h2>
             <div>
@@ -186,6 +188,7 @@ export function ConfigClient({ config: configInicial }: ConfigClientProps) {
                 value={senhaAdmin}
                 onChange={(e) => setSenhaAdmin(e.target.value)}
                 placeholder="Deixe em branco para manter a atual"
+                className="min-h-[44px]"
               />
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Senha atual: {configInicial?.senhaAdmin || '1234'}
@@ -197,7 +200,7 @@ export function ConfigClient({ config: configInicial }: ConfigClientProps) {
           <Button
             type="submit"
             variant="primary"
-            className="w-full"
+            className="w-full min-h-[48px]"
             disabled={loading}
           >
             {loading ? 'Salvando...' : '💾 Salvar Configurações'}

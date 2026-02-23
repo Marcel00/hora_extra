@@ -73,8 +73,10 @@ model Pedido {
   quantidade      Int
   tamanhoId       String? // Opcional para manter compatibilidade com pedidos antigos
   tamanhoNome     String? // "Pequena", "Grande" (Historico)
-  itens           String // JSON string array
-  observacoes     String?
+  itens                      String  // JSON: todos os itens selecionados (acompanhamento + proteína + extra)
+  acompanhamentosSelecionados String? // JSON: apenas acompanhamentos selecionados (para exibir com ✓ na cozinha)
+  itensRemovidos              String? // JSON: acompanhamentos desmarcados (exibir com X na cozinha)
+  observacoes                 String?
   valorTotal      Float
   status          String       @default("pendente") // pendente, preparado, entregue, cancelado
   pontoEntregaId  String

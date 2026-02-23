@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/db'
 import { revalidatePath } from 'next/cache'
+import { isPedidoAberto } from '@/lib/utils'
 
 export async function createPedido(data: {
   nomeCliente: string
@@ -10,11 +11,27 @@ export async function createPedido(data: {
   tamanhoId?: string
   tamanhoNome?: string
   itens: string[]
+  acompanhamentosSelecionados?: string[]
+  itensRemovidos?: string[]
   observacoes: string
   valorTotal: number
   pontoEntregaId: string
 }) {
   try {
+    const ponto = await prisma.pontoEntrega.findUnique({
+      where: { id: data.pontoEntregaId },
+    })
+    if (!ponto || !ponto.ativo) {
+      return { success: false, error: 'Ponto de entrega inválido ou inativo.' }
+    }
+
+    const config = await prisma.configuracao.findFirst()
+    const abertura = config?.horarioAbertura ?? '08:00'
+    const fechamento = config?.horarioFechamento ?? '11:00'
+    if (!isPedidoAberto(abertura, fechamento)) {
+      return { success: false, error: 'Pedidos estão fechados no momento. Tente no horário de atendimento.' }
+    }
+
     const pedido = await prisma.pedido.create({
       data: {
         nomeCliente: data.nomeCliente,
@@ -23,6 +40,8 @@ export async function createPedido(data: {
         tamanhoId: data.tamanhoId,
         tamanhoNome: data.tamanhoNome,
         itens: JSON.stringify(data.itens),
+        acompanhamentosSelecionados: data.acompanhamentosSelecionados?.length ? JSON.stringify(data.acompanhamentosSelecionados) : null,
+        itensRemovidos: data.itensRemovidos?.length ? JSON.stringify(data.itensRemovidos) : null,
         observacoes: data.observacoes || null,
         valorTotal: data.valorTotal,
         pontoEntregaId: data.pontoEntregaId,
@@ -30,7 +49,7 @@ export async function createPedido(data: {
         whatsappEnviado: false,
       },
     })
-    
+
     revalidatePath('/cozinha')
     return { success: true, pedido }
   } catch (error) {
