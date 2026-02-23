@@ -209,10 +209,6 @@ export function CozinhaClient({ pedidos: pedidosIniciais, pontosEntrega }: Cozin
 
           {/* Lista de Pedidos */}
           <div className="mb-6 sm:mb-8">
-            <h2 className="hidden sm:block mb-4 text-2xl font-bold text-gray-800 dark:text-gray-100">
-              📋 Pedidos ({pedidosFiltrados.length})
-            </h2>
-
             {pedidosFiltrados.length === 0 ? (
               <Card className="text-center py-12">
                 <p className="text-gray-500 dark:text-gray-400 text-lg">
