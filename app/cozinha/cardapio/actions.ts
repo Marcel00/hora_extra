@@ -14,6 +14,7 @@ export async function createCardapio(data: { data: Date; preco: number }) {
     })
     
     revalidatePath('/cozinha/cardapio')
+    revalidatePath('/pedido')
     return { success: true, cardapio }
   } catch (error) {
     console.error('Erro ao criar cardápio:', error)
@@ -29,6 +30,7 @@ export async function updateCardapio(id: string, data: { preco?: number; ativo?:
     })
     
     revalidatePath('/cozinha/cardapio')
+    revalidatePath('/pedido')
     return { success: true, cardapio }
   } catch (error) {
     console.error('Erro ao atualizar cardápio:', error)
@@ -43,6 +45,7 @@ export async function deleteCardapio(id: string) {
     })
     
     revalidatePath('/cozinha/cardapio')
+    revalidatePath('/pedido')
     return { success: true }
   } catch (error) {
     console.error('Erro ao deletar cardápio:', error)
@@ -64,6 +67,7 @@ export async function createItemCardapio(data: {
     })
     
     revalidatePath('/cozinha/cardapio')
+    revalidatePath('/pedido')
     return { success: true, item }
   } catch (error) {
     console.error('Erro ao criar item:', error)
@@ -79,6 +83,7 @@ export async function updateItemCardapio(id: string, data: { nome?: string; disp
     })
     
     revalidatePath('/cozinha/cardapio')
+    revalidatePath('/pedido')
     return { success: true, item }
   } catch (error) {
     console.error('Erro ao atualizar item:', error)
@@ -93,6 +98,7 @@ export async function deleteItemCardapio(id: string) {
     })
     
     revalidatePath('/cozinha/cardapio')
+    revalidatePath('/pedido')
     return { success: true }
   } catch (error) {
     console.error('Erro ao deletar item:', error)
@@ -113,6 +119,7 @@ export async function createTamanho(data: {
     })
     
     revalidatePath('/cozinha/cardapio')
+    revalidatePath('/pedido')
     return { success: true, tamanho }
   } catch (error) {
     console.error('Error creating tamanho:', error)
@@ -132,6 +139,7 @@ export async function updateTamanho(id: string, data: {
     })
     
     revalidatePath('/cozinha/cardapio')
+    revalidatePath('/pedido')
     return { success: true, tamanho }
   } catch (error) {
     console.error('Error updating tamanho:', error)
@@ -146,6 +154,7 @@ export async function deleteTamanho(id: string) {
     })
     
     revalidatePath('/cozinha/cardapio')
+    revalidatePath('/pedido')
     return { success: true }
   } catch (error) {
     console.error('Error deleting tamanho:', error)

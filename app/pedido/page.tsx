@@ -3,6 +3,8 @@ import { isPedidoAberto } from '@/lib/utils'
 import { PedidoClient } from './PedidoClient'
 import { redirect } from 'next/navigation'
 
+export const dynamic = 'force-dynamic'
+
 export default async function PedidoPage({
   searchParams,
 }: {

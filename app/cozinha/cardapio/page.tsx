@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/db'
 import { CardapioClient } from './CardapioClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function CardapioPage() {
   const cardapios = await prisma.cardapio.findMany({
     include: {
