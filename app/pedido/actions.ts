@@ -54,6 +54,7 @@ export async function createPedido(data: {
     return { success: true, pedido }
   } catch (error) {
     console.error('Erro ao criar pedido:', error)
-    return { success: false, error: 'Erro ao criar pedido' }
+    const mensagem = error instanceof Error ? error.message : 'Erro ao criar pedido.'
+    return { success: false, error: mensagem }
   }
 }

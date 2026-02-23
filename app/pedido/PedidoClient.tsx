@@ -121,8 +121,9 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
   const sizesRef = useRef<HTMLDivElement>(null)
   const acompanhamentosInicializados = useRef(false)
   const submittingRef = useRef(false)
+  const abrirModalQuandoTamanhoPronto = useRef(false)
 
-  // Acompanhamentos: começar todos marcados; clique desmarca/marca
+  // Acompanhamentos: começar todos marcados; clique desmarca/marca. Estado por id para não vincular itens de mesmo nome em categorias diferentes.
   useEffect(() => {
     if (!cardapio?.itens || acompanhamentosInicializados.current) return
     acompanhamentosInicializados.current = true
@@ -131,9 +132,24 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
     )
     setItensSelecionados((prev) => {
       if (prev.length > 0) return prev
-      return acompanhamentos.map((i) => i.nome)
+      return acompanhamentos.map((i) => i.id)
     })
   }, [cardapio])
+
+  // No Laranjinha, ao clicar Continuar sem tamanho selecionado, definimos Grande e abrimos o modal após o estado atualizar
+  useEffect(() => {
+    if (!abrirModalQuandoTamanhoPronto.current || !tamanhoSelecionado) return
+    abrirModalQuandoTamanhoPronto.current = false
+    if (!nomeCliente || !quantidade) {
+      alert('Por favor, preencha seu nome e a quantidade.')
+      return
+    }
+    if (itensSelecionados.length === 0) {
+      alert('Selecione pelo menos um item do cardápio.')
+      return
+    }
+    setIsModalOpen(true)
+  }, [tamanhoSelecionado, nomeCliente, quantidade, itensSelecionados.length])
 
   const temaPonto = getPontoTheme(pontoEntrega?.nome ?? 'Quiosque Laranjinha')
 
@@ -203,24 +219,25 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
     )
   }
 
-  const toggleItem = (itemNome: string, categoria: string) => {
+  const toggleItem = (item: ItemCardapio) => {
+    const categoria = item.categoria
     const itemsInCategory = cardapio.itens.filter(
       (i) => i.categoria === categoria && i.disponivel
     )
-    const selectedInCategory = itensSelecionados.filter((nome) =>
-      itemsInCategory.some((i) => i.nome === nome)
+    const selectedInCategory = itensSelecionados.filter((id) =>
+      itemsInCategory.some((i) => i.id === id)
     )
 
     // Proteínas: permitir apenas uma opção; ao escolher outra, a anterior é desmarcada
     if (categoria === 'proteina') {
       setItensSelecionados((prev) => {
         const semProteinas = prev.filter(
-          (nome) => !itemsInCategory.some((i) => i.nome === nome)
+          (id) => !itemsInCategory.some((i) => i.id === id)
         )
-        if (prev.includes(itemNome)) {
+        if (prev.includes(item.id)) {
           return semProteinas
         }
-        return [...semProteinas, itemNome]
+        return [...semProteinas, item.id]
       })
       return
     }
@@ -228,9 +245,9 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
     // Extras: sem limite de quantidade; cada um soma R$ 10 no cálculo do preço
     if (categoria === 'extra') {
       setItensSelecionados((prev) =>
-        prev.includes(itemNome)
-          ? prev.filter((i) => i !== itemNome)
-          : [...prev, itemNome]
+        prev.includes(item.id)
+          ? prev.filter((id) => id !== item.id)
+          : [...prev, item.id]
       )
       return
     }
@@ -238,20 +255,19 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
     // Acompanhamentos: ao desmarcar, registrar em acompanhamentosRemovidos (para a cozinha ver o que não colocar)
     if (categoria === 'acompanhamento') {
       setItensSelecionados((prev) => {
-        if (prev.includes(itemNome)) {
-          setAcompanhamentosRemovidos((r) => (r.includes(itemNome) ? r : [...r, itemNome]))
-          return prev.filter((i) => i !== itemNome)
+        if (prev.includes(item.id)) {
+          setAcompanhamentosRemovidos((r) => (r.includes(item.nome) ? r : [...r, item.nome]))
+          return prev.filter((id) => id !== item.id)
         }
-        setAcompanhamentosRemovidos((r) => r.filter((i) => i !== itemNome))
-        return [...prev, itemNome]
+        setAcompanhamentosRemovidos((r) => r.filter((n) => n !== item.nome))
+        return [...prev, item.id]
       })
       return
     }
 
-    const maxSelecoes =
-      itemsInCategory.find((i) => i.nome === itemNome)?.maxSelecoes || 99
+    const maxSelecoes = item.maxSelecoes ?? 99
     if (
-      !itensSelecionados.includes(itemNome) &&
+      !itensSelecionados.includes(item.id) &&
       selectedInCategory.length >= maxSelecoes
     ) {
       alert(`Você já atingiu o limite de ${maxSelecoes} seleções para esta categoria`)
@@ -259,9 +275,9 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
     }
 
     setItensSelecionados((prev) =>
-      prev.includes(itemNome)
-        ? prev.filter((i) => i !== itemNome)
-        : [...prev, itemNome]
+      prev.includes(item.id)
+        ? prev.filter((id) => id !== item.id)
+        : [...prev, item.id]
     )
   }
 
@@ -279,9 +295,9 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
     // Preço base vem do tamanho selecionado ou do cardápio legado
     const precoBase = tamanhoSelecionado ? tamanhoSelecionado.preco : cardapio.preco
     
-    // Identificar itens selecionados com seus dados completos
-    const itensCompletos = itensSelecionados.map(nome => 
-      cardapio.itens.find(i => i.nome === nome)
+    // Identificar itens selecionados com seus dados completos (por id)
+    const itensCompletos = itensSelecionados.map(id =>
+      cardapio.itens.find(i => i.id === id)
     ).filter((item): item is ItemCardapio => !!item)
     
     // Regra 1: Mais de 2 proteínas = +5.00 cada extra
@@ -311,8 +327,14 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
 
   const handleOpenModal = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
-    
+
     if (cardapio?.tamanhos && cardapio.tamanhos.length > 0 && !tamanhoSelecionado) {
+      const grande = cardapio.tamanhos.find(t => t.nome.toLowerCase() === 'grande')
+      if (pontoEntrega.nome === 'Quiosque Laranjinha' && grande) {
+        abrirModalQuandoTamanhoPronto.current = true
+        setTamanhoSelecionado(grande)
+        return
+      }
       alert('Por favor, selecione o tamanho da marmita.')
       sizesRef.current?.scrollIntoView({ behavior: 'smooth' })
       return
@@ -324,7 +346,7 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
     }
 
     if (itensSelecionados.length === 0) {
-      alert('Selecione pelo menos um item do cardápio')
+      alert('Selecione pelo menos um item do cardápio.')
       return
     }
     
@@ -338,16 +360,29 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
     setIsModalOpen(false)
 
     try {
-      const acompanhamentosSelecionados = itensSelecionados.filter((nome) =>
-        cardapio.itens.some((i) => i.categoria === 'acompanhamento' && i.nome === nome)
-      )
+      const itensNomes = itensSelecionados
+        .map((id) => cardapio.itens.find((i) => i.id === id)?.nome)
+        .filter((n): n is string => !!n)
+      if (itensNomes.length === 0) {
+        setLoading(false)
+        submittingRef.current = false
+        setIsModalOpen(true)
+        alert('Nenhum item válido no pedido. Selecione os itens novamente.')
+        return
+      }
+      const acompanhamentosSelecionados = itensSelecionados
+        .filter((id) => {
+          const i = cardapio.itens.find((x) => x.id === id)
+          return i?.categoria === 'acompanhamento'
+        })
+        .map((id) => cardapio.itens.find((x) => x.id === id)!.nome)
       const result = await createPedido({
         nomeCliente,
         telefone,
         quantidade,
         tamanhoId: tamanhoSelecionado?.id,
         tamanhoNome: tamanhoSelecionado?.nome,
-        itens: itensSelecionados,
+        itens: itensNomes,
         acompanhamentosSelecionados,
         itensRemovidos: acompanhamentosRemovidos,
         observacoes,
@@ -361,6 +396,13 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
         setIsModalOpen(true)
         alert(result.error ?? 'Erro ao criar pedido. Tente novamente.')
       }
+    } catch (err) {
+      setIsModalOpen(true)
+      let msg = 'Falha ao enviar o pedido. Verifique sua conexão e tente novamente.'
+      if (err instanceof Error) msg = err.message
+      else if (err && typeof err === 'object' && 'message' in err && typeof (err as { message: unknown }).message === 'string')
+        msg = (err as { message: string }).message
+      alert(msg)
     } finally {
       setLoading(false)
       submittingRef.current = false
@@ -451,20 +493,16 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
         {/* Escolha do Tamanho */}
         {(() => {
           const isCebraspe = pontoEntrega.nome.toLowerCase().includes('cebraspe')
-          
-          // Filter sizes based on location
+          const isLaranjinha = pontoEntrega.nome.toLowerCase().includes('laranjinha')
+
           const tamanhosDisponiveis = cardapio.tamanhos?.filter(t => {
             if (!t.ativo) return false
             const nomeLower = t.nome.toLowerCase()
-            const isPequenaGrande = nomeLower.includes('pequena') || nomeLower.includes('grande')
-            
-            if (isCebraspe) {
-               // Cebraspe shows everything (or specifically P and G if that's the strict rule, but usually it means "they have access to these options")
-               return true 
-            } else {
-               // Non-Cebraspe does NOT show P and G
-               return !isPequenaGrande
-            }
+            const isPequena = nomeLower.includes('pequena')
+            const isGrande = nomeLower.includes('grande')
+            if (isCebraspe) return true
+            if (isLaranjinha) return isGrande
+            return !isPequena && !isGrande
           }) || []
 
           if (tamanhosDisponiveis.length === 0) return null
@@ -477,7 +515,7 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
           return (
             <section className="space-y-4" ref={sizesRef}>
               <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 flex items-center">
-                 1. Escolha o Tamanho
+                 Escolha o Tamanho
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 {tamanhosDisponiveis.map((tamanho) => (
@@ -511,7 +549,7 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
         {/* Dados Pessoais */}
         <section className="space-y-4">
           <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 flex items-center">
-             {cardapio.tamanhos && cardapio.tamanhos.length > 0 ? '2.' : '1.'} Seus Dados
+             Seus Dados
           </h3>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-700 space-y-4">
             <div>
@@ -555,7 +593,7 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
         {/* Quantidade */}
         <section className="space-y-4">
            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">
-             {cardapio.tamanhos && cardapio.tamanhos.length > 0 ? '3.' : '2.'} Tamanho da Fome
+             Tamanho da Fome
           </h3>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xs border border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between mb-4">
@@ -596,8 +634,8 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
                     <SelectableCard
                       key={item.id}
                       label={item.nome}
-                      selected={itensSelecionados.includes(item.nome)}
-                      onClick={() => toggleItem(item.nome, item.categoria)}
+                      selected={itensSelecionados.includes(item.id)}
+                      onClick={() => toggleItem(item)}
                     />
                   ))}
                 </div>
@@ -654,7 +692,9 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
         data={{
           nome: nomeCliente,
           quantidade,
-          itens: itensSelecionados,
+          itens: itensSelecionados
+            .map((id) => cardapio.itens.find((i) => i.id === id)?.nome)
+            .filter((n): n is string => !!n),
           observacoes,
           valorTotal,
           pontoEntrega: pontoEntrega.nome
