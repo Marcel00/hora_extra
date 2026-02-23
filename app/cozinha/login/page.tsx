@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { useAuthStore } from '@/lib/auth-store'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
@@ -29,6 +30,13 @@ export default function LoginCozinha() {
     <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <div className="text-center mb-6 sm:mb-8">
+          <Image
+            src="/logo.png"
+            alt="Hora Extra"
+            width={200}
+            height={100}
+            className="mx-auto mb-4 h-auto w-full max-w-[200px] object-contain"
+          />
           <h1 className="text-2xl sm:text-4xl font-bold text-orange-600 dark:text-orange-500 mb-2">
             🔐 Acesso Cozinha
           </h1>

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { prisma } from '@/lib/db'
 import { isPedidoAberto } from '@/lib/utils'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
@@ -25,14 +26,18 @@ export default async function Home() {
       <ThemeToggle />
       
       <div className="container mx-auto px-4 py-12">
-        {/* Header */}
+        {/* Header com logo */}
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-orange-600 dark:text-orange-500 mb-4">
-            🍱 Hora Extra
-          </h1>
-          <p className="text-xl text-gray-700 dark:text-gray-300">
-            Quiosque & Lanchonete
-          </p>
+          <Link href="/" className="inline-block">
+            <Image
+              src="/logo.png"
+              alt="Hora Extra Lanchonete"
+              width={320}
+              height={160}
+              className="mx-auto h-auto w-full max-w-[280px] sm:max-w-[320px] object-contain"
+              priority
+            />
+          </Link>
         </div>
 
         {/* Status de Pedidos */}

@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import Image from 'next/image'
 import { useAdminAuthStore } from '@/lib/admin-auth-store'
 import { Button } from '@/components/ui/Button'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
@@ -52,8 +53,14 @@ export default function AdminLayout({
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-8">
-              <Link href="/admin" className="flex items-center gap-2">
-                <span className="text-3xl">👨‍💼</span>
+              <Link href="/admin" className="flex items-center gap-3">
+                <Image
+                  src="/logo.png"
+                  alt="Hora Extra"
+                  width={120}
+                  height={60}
+                  className="h-10 w-auto object-contain"
+                />
                 <div>
                   <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">
                     Painel Admin
