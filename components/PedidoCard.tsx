@@ -14,6 +14,7 @@ interface Pedido {
   observacoes: string | null;
   valorTotal: number;
   status: string;
+  whatsappEnviado?: boolean;
   tamanhoNome?: string | null;
   pontoEntrega: {
     nome: string;
@@ -101,7 +102,7 @@ export function PedidoCard({
     <div
       className={`rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl ${temaPonto.border} ${temaPonto.bg} ${obsClass}`}
     >
-      {/* Topo (exemplo): esquerda = nome + (hora • ponto), direita = #número */}
+      {/* Topo: esquerda = nome + (hora • ponto), direita = #número + WhatsApp */}
       <div className="flex justify-between items-start gap-4 mb-4">
         <div className="min-w-0">
           <h3 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100 break-words">
@@ -116,9 +117,20 @@ export function PedidoCard({
             {horaPedido} • {pedido.pontoEntrega.nome}
           </p>
         </div>
-        <span className="text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">
-          #{pedido.numero}
-        </span>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+            #{pedido.numero}
+          </span>
+          {pedido.whatsappEnviado ? (
+            <span className="text-xs text-green-600 dark:text-green-400 font-medium flex items-center gap-0.5" title="Comanda enviada por WhatsApp">
+              ✓ WhatsApp
+            </span>
+          ) : (
+            <span className="text-xs text-gray-400 dark:text-gray-500 font-medium" title="WhatsApp ainda não enviado">
+              — WhatsApp
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Corpo: TAMANHO (tabela) + Acompanhamentos */}

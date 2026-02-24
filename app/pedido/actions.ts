@@ -6,6 +6,44 @@ import { isPedidoAberto } from '@/lib/utils'
 import { sendEvolutionText } from '@/lib/evolution-api'
 import { montarTextoComanda } from '@/lib/comanda-whatsapp'
 
+/** Envia a comanda por WhatsApp em segundo plano (dono + cliente). Não bloqueia a UI. */
+export async function sendWhatsAppComanda(pedidoNumero: number) {
+  try {
+    const pedido = await prisma.pedido.findUnique({
+      where: { numero: pedidoNumero },
+      include: { pontoEntrega: true },
+    })
+    if (!pedido || pedido.whatsappEnviado) return
+
+    const config = await prisma.configuracao.findFirst()
+    const textoComanda = montarTextoComanda({
+      ...pedido,
+      createdAt: pedido.createdAt,
+    })
+
+    let enviouAlguma = false
+    if (config?.telefoneNotificacao?.trim()) {
+      const resOwner = await sendEvolutionText(config.telefoneNotificacao.trim(), textoComanda)
+      if (resOwner.ok) enviouAlguma = true
+      else console.warn('[sendWhatsAppComanda] dono:', resOwner.error)
+    }
+    if (pedido.telefone?.trim()) {
+      const resCliente = await sendEvolutionText(pedido.telefone.trim(), textoComanda)
+      if (resCliente.ok) enviouAlguma = true
+      else console.warn('[sendWhatsAppComanda] cliente:', resCliente.error)
+    }
+    if (enviouAlguma) {
+      await prisma.pedido.update({
+        where: { numero: pedido.numero },
+        data: { whatsappEnviado: true },
+      })
+    }
+    revalidatePath('/cozinha')
+  } catch (e) {
+    console.warn('[sendWhatsAppComanda]', e)
+  }
+}
+
 export async function createPedido(data: {
   nomeCliente: string
   telefone: string
@@ -52,29 +90,6 @@ export async function createPedido(data: {
       },
       include: { pontoEntrega: true },
     })
-
-    const textoComanda = montarTextoComanda({
-      ...pedido,
-      createdAt: pedido.createdAt,
-    })
-
-    let enviouAlguma = false
-    if (config?.telefoneNotificacao?.trim()) {
-      const resOwner = await sendEvolutionText(config.telefoneNotificacao.trim(), textoComanda)
-      if (resOwner.ok) enviouAlguma = true
-      else console.warn('[createPedido] WhatsApp dono:', resOwner.error)
-    }
-    if (data.telefone?.trim()) {
-      const resCliente = await sendEvolutionText(data.telefone.trim(), textoComanda)
-      if (resCliente.ok) enviouAlguma = true
-      else console.warn('[createPedido] WhatsApp cliente:', resCliente.error)
-    }
-    if (enviouAlguma) {
-      await prisma.pedido.update({
-        where: { numero: pedido.numero },
-        data: { whatsappEnviado: true },
-      })
-    }
 
     revalidatePath('/cozinha')
     return { success: true, pedido }
