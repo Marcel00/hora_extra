@@ -563,9 +563,9 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
                 className="h-12 text-lg"
               />
             </div>
-            {/* <div>
+            <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                WhatsApp (Opcional)
+                Seu WhatsApp (para receber a comanda)
               </label>
               <Input
                 type="tel"
@@ -586,7 +586,7 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
                 className="h-12 text-lg"
                 maxLength={15}
               />
-            </div> */}
+            </div>
           </div>
         </section>
 

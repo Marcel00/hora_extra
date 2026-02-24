@@ -138,23 +138,24 @@ export function ConfigClient({ config: configInicial }: ConfigClientProps) {
           </Card>
 
           {/* WhatsApp */}
-          {/* <Card>
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">
+          <Card>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">
               💬 Notificações WhatsApp
             </h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  Telefone para Notificações
+                  Seu WhatsApp (recebe a comanda de cada pedido)
                 </label>
                 <Input
                   type="tel"
                   value={telefoneNotificacao}
                   onChange={(e) => setTelefoneNotificacao(e.target.value)}
                   placeholder="(61) 99999-9999"
+                  className="min-h-[44px]"
                 />
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Número que receberá notificações de novos pedidos
+                  Número do dono/cozinha que receberá notificações de novos pedidos
                 </p>
               </div>
               <div>
@@ -172,7 +173,7 @@ export function ConfigClient({ config: configInicial }: ConfigClientProps) {
                 </p>
               </div>
             </div>
-          </Card> */}
+          </Card>
 
           {/* Segurança */}
           <Card>
