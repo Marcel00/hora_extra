@@ -27,7 +27,6 @@ export function ConfigClient({ config: configInicial }: ConfigClientProps) {
   const { isAuthenticated, logout } = useAuthStore()
   const [horarioAbertura, setHorarioAbertura] = useState(configInicial?.horarioAbertura || '08:00')
   const [horarioFechamento, setHorarioFechamento] = useState(configInicial?.horarioFechamento || '11:00')
-  const [mensagemWhatsApp, setMensagemWhatsApp] = useState(configInicial?.mensagemWhatsApp || '')
   const [telefoneNotificacao, setTelefoneNotificacao] = useState(configInicial?.telefoneNotificacao || '')
   const [senhaAdmin, setSenhaAdmin] = useState('')
   const [loading, setLoading] = useState(false)
@@ -47,14 +46,16 @@ export function ConfigClient({ config: configInicial }: ConfigClientProps) {
     e.preventDefault()
     setLoading(true)
 
-    const data: any = {
+    const data: {
+      horarioAbertura: string
+      horarioFechamento: string
+      telefoneNotificacao: string
+      senhaAdmin?: string
+    } = {
       horarioAbertura,
       horarioFechamento,
-      mensagemWhatsApp,
       telefoneNotificacao,
     }
-
-    // Só atualizar senha se foi preenchida
     if (senhaAdmin) {
       data.senhaAdmin = senhaAdmin
     }
@@ -158,20 +159,6 @@ export function ConfigClient({ config: configInicial }: ConfigClientProps) {
                   Número do dono/cozinha que receberá notificações de novos pedidos
                 </p>
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  Mensagem de Confirmação
-                </label>
-                <textarea
-                  value={mensagemWhatsApp}
-                  onChange={(e) => setMensagemWhatsApp(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-orange-500 dark:focus:border-orange-600 transition-colors duration-200 min-h-32"
-                  required
-                />
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Use {'{nome}'} para inserir o nome do cliente
-                </p>
-              </div>
             </div>
           </Card>
 
@@ -192,7 +179,7 @@ export function ConfigClient({ config: configInicial }: ConfigClientProps) {
                 className="min-h-[44px]"
               />
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Senha atual: {configInicial?.senhaAdmin || '1234'}
+                Preencha apenas se quiser alterar a senha de acesso à cozinha.
               </p>
             </div>
           </Card>

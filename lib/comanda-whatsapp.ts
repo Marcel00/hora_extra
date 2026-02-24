@@ -1,6 +1,3 @@
-import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
-
 export type ComandaPedido = {
   numero: number
   nomeCliente: string
@@ -11,6 +8,21 @@ export type ComandaPedido = {
   valorTotal: number
   pontoEntrega: { nome: string; horario: string }
   createdAt: Date
+}
+
+/** Formata data/hora no fuso de Brasília para a comanda. */
+function formatarDataHoraBrasilia(date: Date): string {
+  return new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
+    .format(date)
+    .replace(',', ' ')
 }
 
 /**
@@ -25,12 +37,14 @@ export function montarTextoComanda(pedido: ComandaPedido): string {
     }
   })()
 
+  const dataHora = formatarDataHoraBrasilia(new Date(pedido.createdAt))
+
   const linhas = [
     '🍱 *HORA EXTRA*',
     'Pedido Confirmado!',
     '—',
     `*PEDIDO #${pedido.numero}*`,
-    format(new Date(pedido.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }),
+    dataHora,
     '',
     `*Cliente:* ${pedido.nomeCliente}`,
     ...(pedido.telefone ? [`*Tel:* ${pedido.telefone}`] : []),
