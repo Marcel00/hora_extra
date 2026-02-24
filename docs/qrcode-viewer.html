@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Code Evolution API</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 400px; margin: 20px auto; padding: 20px; text-align: center; }
+    textarea { width: 100%; height: 80px; margin: 10px 0; font-size: 12px; }
+    button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    #qrcode { margin: 20px 0; max-width: 100%; }
+    #qrcode img { max-width: 280px; border: 1px solid #ccc; }
+    p { color: #666; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h2>QR Code – Evolution API</h2>
+  <p>Cole abaixo o valor do campo <strong>base64</strong> da resposta (começa com <code>data:image/png;base64,</code>).</p>
+  <textarea id="input" placeholder="Cole aqui o base64 completo (data:image/png;base64,...)"></textarea>
+  <br>
+  <button type="button" onclick="mostrar()">Exibir QR code</button>
+  <div id="qrcode"></div>
+  <p>No celular: WhatsApp → Configurações → Aparelhos conectados → Conectar um aparelho → Escanear.</p>
+  <p><strong>O QR expira em segundos.</strong> Se expirar, rode de novo o <code>curl ... instance/connect/hora-extra</code> e cole o novo base64.</p>
+
+  <script>
+    function mostrar() {
+      var raw = document.getElementById('input').value.trim();
+      // Remove quebras de linha que podem ter vindo ao colar do terminal
+      var base64 = raw.replace(/\s/g, '');
+      var div = document.getElementById('qrcode');
+      div.innerHTML = '';
+      if (!base64) {
+        div.textContent = 'Cole o base64 e clique em Exibir.';
+        return;
+      }
+      var img = document.createElement('img');
+      img.src = base64;
+      img.alt = 'QR Code';
+      img.onerror = function() { div.textContent = 'Base64 inválido. Cole o valor completo (data:image/png;base64,...) sem quebras de linha.'; };
+      img.onload = function() { div.appendChild(img); };
+    }
+  </script>
+</body>
+</html>
