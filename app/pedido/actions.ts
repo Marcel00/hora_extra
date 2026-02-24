@@ -3,6 +3,8 @@
 import { prisma } from '@/lib/db'
 import { revalidatePath } from 'next/cache'
 import { isPedidoAberto } from '@/lib/utils'
+import { sendEvolutionText } from '@/lib/evolution-api'
+import { montarTextoComanda } from '@/lib/comanda-whatsapp'
 
 export async function createPedido(data: {
   nomeCliente: string
@@ -48,7 +50,31 @@ export async function createPedido(data: {
         status: 'pendente',
         whatsappEnviado: false,
       },
+      include: { pontoEntrega: true },
     })
+
+    const textoComanda = montarTextoComanda({
+      ...pedido,
+      createdAt: pedido.createdAt,
+    })
+
+    let enviouAlguma = false
+    if (config?.telefoneNotificacao?.trim()) {
+      const resOwner = await sendEvolutionText(config.telefoneNotificacao.trim(), textoComanda)
+      if (resOwner.ok) enviouAlguma = true
+      else console.warn('[createPedido] WhatsApp dono:', resOwner.error)
+    }
+    if (data.telefone?.trim()) {
+      const resCliente = await sendEvolutionText(data.telefone.trim(), textoComanda)
+      if (resCliente.ok) enviouAlguma = true
+      else console.warn('[createPedido] WhatsApp cliente:', resCliente.error)
+    }
+    if (enviouAlguma) {
+      await prisma.pedido.update({
+        where: { numero: pedido.numero },
+        data: { whatsappEnviado: true },
+      })
+    }
 
     revalidatePath('/cozinha')
     return { success: true, pedido }
