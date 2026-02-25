@@ -6,18 +6,37 @@ import { isPedidoAberto } from '@/lib/utils'
 import { sendEvolutionText } from '@/lib/evolution-api'
 import { montarTextoComanda } from '@/lib/comanda-whatsapp'
 
-/** Envia a comanda por WhatsApp (dono + cliente). Retorna se enviou e eventual erro para feedback. */
-export async function sendWhatsAppComanda(pedidoNumero: number): Promise<{ enviouAlguma: boolean; erro?: string }> {
+/** Envia a comanda por WhatsApp (dono + cliente). Se passar `dados`, evita refetch no banco (mais rápido). */
+export async function sendWhatsAppComanda(
+  pedidoNumero: number,
+  dados?: {
+    pedido: { numero: number; telefone: string | null; whatsappEnviado: boolean; createdAt: Date; pontoEntrega: { nome: string; horario: string }; nomeCliente: string; quantidade: number; itens: string; observacoes: string | null; valorTotal: number }
+    config: { telefoneNotificacao: string | null } | null
+  }
+): Promise<{ enviouAlguma: boolean; erro?: string }> {
   try {
-    const pedido = await prisma.pedido.findUnique({
-      where: { numero: pedidoNumero },
-      include: { pontoEntrega: true },
-    })
+    let pedido: { numero: number; telefone: string | null; whatsappEnviado: boolean; createdAt: Date; pontoEntrega: { nome: string; horario: string }; nomeCliente: string; quantidade: number; itens: string; observacoes: string | null; valorTotal: number } | null
+    let config: { telefoneNotificacao: string | null } | null
+
+    if (dados) {
+      pedido = dados.pedido
+      config = dados.config
+    } else {
+      const [pedidoRes, configRes] = await Promise.all([
+        prisma.pedido.findUnique({
+          where: { numero: pedidoNumero },
+          include: { pontoEntrega: true },
+        }),
+        prisma.configuracao.findFirst(),
+      ])
+      pedido = pedidoRes
+      config = configRes
+    }
+
     if (!pedido || pedido.whatsappEnviado) {
       return { enviouAlguma: !!pedido?.whatsappEnviado }
     }
 
-    const config = await prisma.configuracao.findFirst()
     const textoComanda = montarTextoComanda({
       ...pedido,
       createdAt: pedido.createdAt,
@@ -100,8 +119,8 @@ export async function createPedido(data: {
       include: { pontoEntrega: true },
     })
 
-    // Envia WhatsApp na mesma requisição (mais confiável que chamada em segundo plano)
-    const { enviouAlguma, erro: whatsappErro } = await sendWhatsAppComanda(pedido.numero)
+    // Envia WhatsApp na mesma requisição, passando pedido e config para evitar 2 refetches no banco
+    const { enviouAlguma, erro: whatsappErro } = await sendWhatsAppComanda(pedido.numero, { pedido, config })
 
     revalidatePath('/cozinha')
     return {
