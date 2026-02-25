@@ -119,16 +119,9 @@ export async function createPedido(data: {
       include: { pontoEntrega: true },
     })
 
-    // Envia WhatsApp na mesma requisição, passando pedido e config para evitar 2 refetches no banco
-    const { enviouAlguma, erro: whatsappErro } = await sendWhatsAppComanda(pedido.numero, { pedido, config })
-
     revalidatePath('/cozinha')
-    return {
-      success: true,
-      pedido,
-      whatsappEnviado: enviouAlguma,
-      whatsappErro: whatsappErro ?? undefined,
-    }
+    // Retorna na hora; o cliente dispara o WhatsApp em segundo plano (não trava a tela)
+    return { success: true, pedido }
   } catch (error) {
     console.error('Erro ao criar pedido:', error)
     const mensagem = error instanceof Error ? error.message : 'Erro ao criar pedido.'

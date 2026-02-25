@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 
-import { createPedido } from './actions'
+import { createPedido, sendWhatsAppComanda } from './actions'
 import { ConfirmationModal } from '@/components/ConfirmationModal'
 
 interface Tamanho {
@@ -397,9 +397,12 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
       })
 
       if (result.success && result.pedido) {
-        setWhatsappEnviado(result.whatsappEnviado ?? false)
         setIsModalOpen(false)
         setSucesso(true)
+        // Dispara o WhatsApp em segundo plano; quando terminar, mostra "enviado com sucesso" se deu certo
+        sendWhatsAppComanda(result.pedido.numero).then((r) => {
+          if (r.enviouAlguma) setWhatsappEnviado(true)
+        }).catch(() => {})
       } else if (!result.success) {
         setIsModalOpen(true)
         alert(result.error ?? 'Erro ao criar pedido. Tente novamente.')
