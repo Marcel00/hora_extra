@@ -23,25 +23,20 @@ export async function sendWhatsAppComanda(pedidoNumero: number): Promise<{ envio
       createdAt: pedido.createdAt,
     })
 
-    let enviouAlguma = false
-    const erros: string[] = []
-
+    // Envia para dono e cliente em paralelo (mais rápido que um após o outro)
+    const promessas: Promise<{ ok: boolean; error?: string }>[] = []
     if (config?.telefoneNotificacao?.trim()) {
-      const resOwner = await sendEvolutionText(config.telefoneNotificacao.trim(), textoComanda)
-      if (resOwner.ok) enviouAlguma = true
-      else {
-        console.warn('[sendWhatsAppComanda] dono:', resOwner.error)
-        erros.push(`dono: ${resOwner.error ?? 'erro'}`)
-      }
+      promessas.push(sendEvolutionText(config.telefoneNotificacao.trim(), textoComanda))
     }
     if (pedido.telefone?.trim()) {
-      const resCliente = await sendEvolutionText(pedido.telefone.trim(), textoComanda)
-      if (resCliente.ok) enviouAlguma = true
-      else {
-        console.warn('[sendWhatsAppComanda] cliente:', resCliente.error)
-        erros.push(`cliente: ${resCliente.error ?? 'erro'}`)
-      }
+      promessas.push(sendEvolutionText(pedido.telefone.trim(), textoComanda))
     }
+    const resultados = await Promise.all(promessas)
+    const enviouAlguma = resultados.some((r) => r.ok)
+    const erros = resultados.filter((r) => !r.ok).map((r) => r.error ?? 'erro')
+    resultados.forEach((r, i) => {
+      if (!r.ok) console.warn('[sendWhatsAppComanda]', i === 0 && config?.telefoneNotificacao ? 'dono' : 'cliente', r.error)
+    })
 
     if (enviouAlguma) {
       await prisma.pedido.update({
