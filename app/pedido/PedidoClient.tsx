@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 
-import { createPedido, sendWhatsAppComanda } from './actions'
+import { createPedido } from './actions'
 import { ConfirmationModal } from '@/components/ConfirmationModal'
 
 interface Tamanho {
@@ -115,6 +115,7 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
   const [observacoes, setObservacoes] = useState('')
   const [loading, setLoading] = useState(false)
   const [sucesso, setSucesso] = useState(false)
+  const [whatsappEnviado, setWhatsappEnviado] = useState<boolean | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -208,6 +209,11 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
           <p className="text-gray-700 dark:text-gray-300 mb-6">
             Seu pedido foi recebido com sucesso e será entregue em <strong>{pontoEntrega.nome}</strong> às <strong>{pontoEntrega.horario}</strong>.
           </p>
+          {whatsappEnviado && (
+            <p className="text-green-600 dark:text-green-400 text-sm mb-4">
+              ✓ Comanda enviada por WhatsApp com sucesso.
+            </p>
+          )}
           <Button
             onClick={() => router.push('/')}
             className={`w-full ${temaPonto.buttonBg}`}
@@ -357,7 +363,7 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
     if (submittingRef.current) return
     submittingRef.current = true
     setLoading(true)
-    setIsModalOpen(false)
+    // Mantém o modal aberto com loading enquanto envia (pedido + WhatsApp)
 
     try {
       const itensNomes = itensSelecionados
@@ -391,9 +397,9 @@ export function PedidoClient({ cardapio, pontoEntrega, pedidosAbertos }: PedidoC
       })
 
       if (result.success && result.pedido) {
+        setWhatsappEnviado(result.whatsappEnviado ?? false)
+        setIsModalOpen(false)
         setSucesso(true)
-        // Envia WhatsApp em segundo plano (não bloqueia a confirmação)
-        sendWhatsAppComanda(result.pedido.numero).catch(() => {})
       } else if (!result.success) {
         setIsModalOpen(true)
         alert(result.error ?? 'Erro ao criar pedido. Tente novamente.')

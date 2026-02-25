@@ -6,14 +6,16 @@ import { isPedidoAberto } from '@/lib/utils'
 import { sendEvolutionText } from '@/lib/evolution-api'
 import { montarTextoComanda } from '@/lib/comanda-whatsapp'
 
-/** Envia a comanda por WhatsApp em segundo plano (dono + cliente). Não bloqueia a UI. */
-export async function sendWhatsAppComanda(pedidoNumero: number) {
+/** Envia a comanda por WhatsApp (dono + cliente). Retorna se enviou e eventual erro para feedback. */
+export async function sendWhatsAppComanda(pedidoNumero: number): Promise<{ enviouAlguma: boolean; erro?: string }> {
   try {
     const pedido = await prisma.pedido.findUnique({
       where: { numero: pedidoNumero },
       include: { pontoEntrega: true },
     })
-    if (!pedido || pedido.whatsappEnviado) return
+    if (!pedido || pedido.whatsappEnviado) {
+      return { enviouAlguma: !!pedido?.whatsappEnviado }
+    }
 
     const config = await prisma.configuracao.findFirst()
     const textoComanda = montarTextoComanda({
@@ -22,16 +24,25 @@ export async function sendWhatsAppComanda(pedidoNumero: number) {
     })
 
     let enviouAlguma = false
+    const erros: string[] = []
+
     if (config?.telefoneNotificacao?.trim()) {
       const resOwner = await sendEvolutionText(config.telefoneNotificacao.trim(), textoComanda)
       if (resOwner.ok) enviouAlguma = true
-      else console.warn('[sendWhatsAppComanda] dono:', resOwner.error)
+      else {
+        console.warn('[sendWhatsAppComanda] dono:', resOwner.error)
+        erros.push(`dono: ${resOwner.error ?? 'erro'}`)
+      }
     }
     if (pedido.telefone?.trim()) {
       const resCliente = await sendEvolutionText(pedido.telefone.trim(), textoComanda)
       if (resCliente.ok) enviouAlguma = true
-      else console.warn('[sendWhatsAppComanda] cliente:', resCliente.error)
+      else {
+        console.warn('[sendWhatsAppComanda] cliente:', resCliente.error)
+        erros.push(`cliente: ${resCliente.error ?? 'erro'}`)
+      }
     }
+
     if (enviouAlguma) {
       await prisma.pedido.update({
         where: { numero: pedido.numero },
@@ -39,8 +50,11 @@ export async function sendWhatsAppComanda(pedidoNumero: number) {
       })
     }
     revalidatePath('/cozinha')
+    return { enviouAlguma, erro: erros.length ? erros.join('; ') : undefined }
   } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
     console.warn('[sendWhatsAppComanda]', e)
+    return { enviouAlguma: false, erro: msg }
   }
 }
 
@@ -91,8 +105,16 @@ export async function createPedido(data: {
       include: { pontoEntrega: true },
     })
 
+    // Envia WhatsApp na mesma requisição (mais confiável que chamada em segundo plano)
+    const { enviouAlguma, erro: whatsappErro } = await sendWhatsAppComanda(pedido.numero)
+
     revalidatePath('/cozinha')
-    return { success: true, pedido }
+    return {
+      success: true,
+      pedido,
+      whatsappEnviado: enviouAlguma,
+      whatsappErro: whatsappErro ?? undefined,
+    }
   } catch (error) {
     console.error('Erro ao criar pedido:', error)
     const mensagem = error instanceof Error ? error.message : 'Erro ao criar pedido.'
