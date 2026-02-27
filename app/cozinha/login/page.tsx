@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useAuthStore } from '@/lib/auth-store'
+import { validarSenhaCozinha } from '@/app/cozinha/actions'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -11,14 +13,18 @@ import { Card } from '@/components/ui/Card'
 export default function LoginCozinha() {
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const login = useAuthStore((state) => state.login)
+  const setAuthenticated = useAuthStore((state) => state.setAuthenticated)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErro('')
-
-    if (login(senha)) {
+    setLoading(true)
+    const { valid } = await validarSenhaCozinha(senha)
+    setLoading(false)
+    if (valid) {
+      setAuthenticated(true)
       router.push('/cozinha')
     } else {
       setErro('Senha incorreta!')
@@ -70,18 +76,18 @@ export default function LoginCozinha() {
             )}
           </div>
 
-          <Button type="submit" className="w-full min-h-[48px]" variant="primary">
-            Entrar
+          <Button type="submit" className="w-full min-h-[48px]" variant="primary" disabled={loading}>
+            {loading ? 'Verificando...' : 'Entrar'}
           </Button>
         </form>
 
         <div className="mt-6 text-center">
-          <a
+          <Link
             href="/"
             className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 underline"
           >
             ← Voltar para página inicial
-          </a>
+          </Link>
         </div>
       </Card>
     </main>

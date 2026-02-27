@@ -5,23 +5,16 @@ import { persist } from 'zustand/middleware'
 
 interface AuthStore {
   isAuthenticated: boolean
-  login: (password: string) => boolean
+  /** Marca como autenticado (após validar senha no servidor). */
+  setAuthenticated: (value: boolean) => void
   logout: () => void
 }
-
-const SENHA_COZINHA = '1234'
 
 export const useAuthStore = create<AuthStore>()(
   persist(
     (set) => ({
       isAuthenticated: false,
-      login: (password: string) => {
-        const isValid = password === SENHA_COZINHA
-        if (isValid) {
-          set({ isAuthenticated: true })
-        }
-        return isValid
-      },
+      setAuthenticated: (value: boolean) => set({ isAuthenticated: value }),
       logout: () => set({ isAuthenticated: false }),
     }),
     {

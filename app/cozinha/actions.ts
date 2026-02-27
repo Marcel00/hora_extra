@@ -3,6 +3,13 @@
 import { prisma } from '@/lib/db'
 import { revalidatePath } from 'next/cache'
 
+/** Valida a senha da cozinha contra a config no banco (senha que pode ser alterada em /cozinha/config). */
+export async function validarSenhaCozinha(senha: string): Promise<{ valid: boolean }> {
+  const config = await prisma.configuracao.findFirst()
+  const senhaAtual = config?.senhaAdmin ?? '1234'
+  return { valid: senha.trim() === senhaAtual }
+}
+
 export async function updatePedidoStatus(numero: number, novoStatus: string) {
   try {
     await prisma.pedido.update({
