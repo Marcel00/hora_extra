@@ -170,11 +170,13 @@ A resposta vem em JSON com o QR code em **base64** (campo `qrcode.base64`). O te
 ```html
 <!DOCTYPE html>
 <html>
-<body style="text-align:center; padding: 20px;">
-  <h2>Escaneie com WhatsApp</h2>
-  <img src="COLE_O_BASE64_AQUI" alt="QR Code" style="max-width: 300px;" />
-  <p>WhatsApp → Configurações → Aparelhos conectados → Conectar um aparelho</p>
-</body>
+  <body style="text-align:center; padding: 20px;">
+    <h2>Escaneie com WhatsApp</h2>
+    <img src="COLE_O_BASE64_AQUI" alt="QR Code" style="max-width: 300px;" />
+    <p>
+      WhatsApp → Configurações → Aparelhos conectados → Conectar um aparelho
+    </p>
+  </body>
 </html>
 ```
 
@@ -187,7 +189,7 @@ O QR code expira em poucos segundos. Se não der tempo de escanear, peça um nov
 
 ```bash
 curl -X GET "https://evolution-xxx.onrender.com/instance/connect/hora-extra" \
-  -H "apikey: MinhaChaveSecreta123"
+  -H "apikey: 07cbae6646d04d9fbe13dac94dd90d76"
 ```
 
 (Substitua a URL e a apikey pelas suas.) A resposta traz um novo `qrcode.base64`; use a Opção A de novo para exibir e escanear.
@@ -240,7 +242,7 @@ No celular você pode usar “Vincular com número de telefone” em vez de esca
 
 ```bash
 curl -X GET "https://evolution-api-p67i.onrender.com/instance/connect/hora-extra?number=5511999999999" \
-  -H "apikey: SUA_API_KEY"
+  -H "apikey: 07cbae6646d04d9fbe13dac94dd90d76"
 ```
 
 Troque `5511999999999` pelo número do WhatsApp que vai conectar (país + DDD + número, sem espaços). Na resposta pode vir o campo **`pairingCode`** (ex.: `ABCD-1234`). No celular: WhatsApp → Aparelhos conectados → Conectar um aparelho → **Vincular com número de telefone** → digite o código. Assim você não depende do QR e pode dar tempo do serviço estar estável.
@@ -255,8 +257,8 @@ Se der erro várias vezes, espere **15–30 minutos** e tente de novo. O WhatsAp
 
 No Render free o serviço dorme; em horários de pouco uso isso atrapalha o pareamento. Alternativas:
 
-- **Render pago** (plano que não dorme), ou  
-- **VPS** (ex.: Hostinger, DigitalOcean, Contabo) com Evolution em Docker  
+- **Render pago** (plano que não dorme), ou
+- **VPS** (ex.: Hostinger, DigitalOcean, Contabo) com Evolution em Docker
 
 Com o serviço sempre ligado, o QR e o pareamento costumam funcionar de forma estável.
 
@@ -272,3 +274,49 @@ Com o serviço sempre ligado, o QR e o pareamento costumam funcionar de forma es
    - **EVOLUTION_INSTANCE** = nome da instância (ex: `hora-extra`).
    - **EVOLUTION_API_KEY** = mesma chave do servidor da Evolution.
 5. Fazer um **novo deploy** na Vercel para carregar as variáveis.
+
+---
+
+## ⚡ Atalhos rápidos (instância atual)
+
+| Item                 | Valor                                          |
+| -------------------- | ---------------------------------------------- |
+| **URL da API**       | `https://evolution-api-p67i.onrender.com`      |
+| **Instância**        | `hora-extra`                                   |
+| **API Key**          | `07cbae6646d04d9fbe13dac94dd90d76`             |
+| **Painel visual**    | http://evolution-api-p67i.onrender.com/manager |
+| **Número conectado** | `5561996201191`                                |
+
+### Comandos frequentes
+
+**Ver status da instância:**
+
+```bash
+curl -X GET "https://evolution-api-p67i.onrender.com/instance/connect/hora-extra" \
+  -H "apikey: 07cbae6646d04d9fbe13dac94dd90d76"
+```
+
+**Deslogar (para trocar de número):**
+
+```bash
+curl -X DELETE "https://evolution-api-p67i.onrender.com/instance/logout/hora-extra" \
+  -H "apikey: 07cbae6646d04d9fbe13dac94dd90d76"
+```
+
+**Conectar com código de pareamento (mais confiável que QR):**
+
+```bash
+curl -X GET "https://evolution-api-p67i.onrender.com/instance/connect/hora-extra?number=5561996201191" \
+  -H "apikey: 07cbae6646d04d9fbe13dac94dd90d76"
+```
+
+> Retorna `{"pairingCode":"XXXX-XXXX"}`. No celular: WhatsApp → Aparelhos conectados → Conectar um aparelho → **Vincular com número de telefone** → digite o código.
+
+**Gerar QR Code:**
+
+```bash
+curl -X GET "https://evolution-api-p67i.onrender.com/instance/connect/hora-extra" \
+  -H "apikey: 07cbae6646d04d9fbe13dac94dd90d76"
+```
+
+> Retorna base64 do QR. Abra `docs/qrcode-viewer.html` para visualizar e escanear.
