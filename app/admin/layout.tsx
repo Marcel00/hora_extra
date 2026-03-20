@@ -45,7 +45,7 @@ export default function AdminLayout({
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-linear-to-br from-orange-50 via-white to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <ThemeToggle />
       
       {/* Top Navigation */}
@@ -59,7 +59,7 @@ export default function AdminLayout({
                   alt="Hora Extra"
                   width={120}
                   height={60}
-                  className="h-10 w-auto object-contain"
+                  className="h-10 w-auto object-contain rounded-2xl"
                 />
                 <div>
                   <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">

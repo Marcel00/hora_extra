@@ -43,11 +43,37 @@ export function CozinhaClient({ pedidos: pedidosIniciais, pontosEntrega }: Cozin
   const [filtroStatus, setFiltroStatus] = useState<'ativos' | 'pendente' | 'preparado' | 'entregue'>('ativos')
   const [printingOrder, setPrintingOrder] = useState<Pedido | null>(null)
 
+  // Intervalo para "hoje e ontem" (hora local do navegador).
+  const rangeHojeOntem = (() => {
+    const hoje = new Date()
+    hoje.setHours(0, 0, 0, 0)
+
+    const ontem = new Date(hoje)
+    ontem.setDate(hoje.getDate() - 1)
+
+    const fimHoje = new Date(hoje)
+    fimHoje.setHours(23, 59, 59, 999)
+
+    return { inicioOntem: ontem, inicioHoje: hoje, fimHoje }
+  })()
+
+  const pedidoEntregueHojeOuOntem = (pedido: Pedido) => {
+    if (pedido.status !== 'entregue') return false
+    const dataPedido = new Date(pedido.createdAt)
+    return dataPedido >= rangeHojeOntem.inicioOntem && dataPedido <= rangeHojeOntem.fimHoje
+  }
+
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/cozinha/login')
     }
   }, [isAuthenticated, router])
+
+  // Quando o Next refresh/recarrega os dados do server,
+  // sincroniza o estado para garantir novos pedidos e manter a ordenação.
+  useEffect(() => {
+    setPedidos(pedidosIniciais)
+  }, [pedidosIniciais])
 
   const handleLogout = () => {
     logout()
@@ -75,19 +101,24 @@ export function CozinhaClient({ pedidos: pedidosIniciais, pontosEntrega }: Cozin
 
   const matchStatus = (pedido: Pedido) => {
     if (filtroStatus === 'ativos') return ['pendente', 'preparado'].includes(pedido.status)
+    if (filtroStatus === 'entregue') return pedidoEntregueHojeOuOntem(pedido)
     return pedido.status === filtroStatus
   }
 
   const pedidosFiltrados = pedidos.filter(pedido => {
     const matchPonto = filtroPonto === 'todos' || pedido.pontoEntrega.nome === filtroPonto
     return matchStatus(pedido) && matchPonto
+  }).sort((a, b) => {
+    const tA = new Date(a.createdAt).getTime()
+    const tB = new Date(b.createdAt).getTime()
+    return tB - tA
   })
 
   const estatisticas = {
     totalAtivos: pedidosAtivos.length,
     pendentes: pedidos.filter(p => p.status === 'pendente').length,
     preparados: pedidos.filter(p => p.status === 'preparado').length,
-    entreguesHoje: pedidos.filter(p => p.status === 'entregue').length,
+    entreguesHoje: pedidos.filter(p => pedidoEntregueHojeOuOntem(p)).length,
   }
 
   // ... (auth checks)
@@ -96,7 +127,7 @@ export function CozinhaClient({ pedidos: pedidosIniciais, pontosEntrega }: Cozin
     <>
       {/* ... styles ... */}
       
-      <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 no-print">
+      <main className="min-h-screen bg-linear-to-br from-orange-50 via-white to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 no-print">
         <ThemeToggle />
         
         <div className="container mx-auto px-4 py-6 sm:py-8 max-w-6xl">
@@ -178,7 +209,7 @@ export function CozinhaClient({ pedidos: pedidosIniciais, pontosEntrega }: Cozin
                   : 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800 hover:border-green-400 dark:hover:border-green-600 opacity-75 hover:opacity-100'
               }`}
             >
-              <p className="text-xs sm:text-sm text-green-800 dark:text-green-500 mb-0.5 sm:mb-1">Entregues Hoje</p>
+              <p className="text-xs sm:text-sm text-green-800 dark:text-green-500 mb-0.5 sm:mb-1">Entregues Hoje e Ontem</p>
               <p className="text-2xl sm:text-4xl font-bold text-green-600 dark:text-green-500">{estatisticas.entreguesHoje}</p>
             </button>
           </div>
@@ -186,7 +217,7 @@ export function CozinhaClient({ pedidos: pedidosIniciais, pontosEntrega }: Cozin
           {/* Filtros */}
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6">
              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 shrink-0">
-                {filtroStatus === 'entregue' ? '✅ Entregues Hoje' : filtroStatus === 'pendente' ? '⏳ Pendentes' : filtroStatus === 'preparado' ? '🍳 Em Preparo' : '📋 Pedidos em Aberto'}
+                {filtroStatus === 'entregue' ? '✅ Entregues Hoje e Ontem' : filtroStatus === 'pendente' ? '⏳ Pendentes' : filtroStatus === 'preparado' ? '🍳 Em Preparo' : '📋 Pedidos em Aberto'}
                 <span className="bg-gray-200 dark:bg-gray-700 text-xs sm:text-sm px-2 py-1 rounded-full text-gray-700 dark:text-gray-300">
                   {pedidosFiltrados.length}
                 </span>

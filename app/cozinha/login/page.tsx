@@ -33,16 +33,18 @@ export default function LoginCozinha() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
+    <main className="min-h-screen bg-linear-to-br from-orange-50 via-white to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <div className="text-center mb-6 sm:mb-8">
-          <Image
-            src="/logo.png"
-            alt="Hora Extra"
-            width={200}
-            height={100}
-            className="mx-auto mb-4 h-auto w-full max-w-[200px] object-contain"
-          />
+          <div className="mx-auto mb-4 w-full max-w-[200px] overflow-hidden rounded-2xl">
+            <Image
+              src="/logo.png"
+              alt="Hora Extra"
+              width={200}
+              height={100}
+              className="h-auto w-full object-contain"
+            />
+          </div>
           <h1 className="text-2xl sm:text-4xl font-bold text-orange-600 dark:text-orange-500 mb-2">
             🔐 Acesso Cozinha
           </h1>
@@ -63,8 +65,14 @@ export default function LoginCozinha() {
               id="senha"
               type="password"
               value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-              placeholder="Digite a senha"
+              inputMode="numeric"
+              maxLength={4}
+              placeholder="Digite a senha (4 dígitos)"
+              onChange={(e) => {
+                // Senha do admin é numérica (default: 1234)
+                const digits = e.target.value.replace(/\D/g, '').slice(0, 4)
+                setSenha(digits)
+              }}
               autoFocus
               required
               className="min-h-[44px]"

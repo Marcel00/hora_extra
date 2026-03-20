@@ -6,35 +6,58 @@ import { isPedidoAberto } from '@/lib/utils'
 import { sendEvolutionText } from '@/lib/evolution-api'
 import { montarTextoComanda } from '@/lib/comanda-whatsapp'
 
-/** Envia a comanda por WhatsApp (dono + cliente). Se passar `dados`, evita refetch no banco (mais rápido). */
+/** Envia a comanda por WhatsApp (somente cliente). Se passar `dados`, evita refetch no banco (mais rápido). */
 export async function sendWhatsAppComanda(
   pedidoNumero: number,
   dados?: {
-    pedido: { numero: number; telefone: string | null; whatsappEnviado: boolean; createdAt: Date; pontoEntrega: { nome: string; horario: string }; nomeCliente: string; quantidade: number; itens: string; observacoes: string | null; valorTotal: number }
-    config: { telefoneNotificacao: string | null } | null
+    pedido: {
+      numero: number
+      telefone: string | null
+      whatsappEnviado: boolean
+      createdAt: Date
+      pontoEntrega: { nome: string; horario: string }
+      nomeCliente: string
+      quantidade: number
+      itens: string
+      observacoes: string | null
+      valorTotal: number
+    }
   }
-): Promise<{ enviouAlguma: boolean; erro?: string }> {
+): Promise<{
+  enviadoCliente: boolean
+  erroGeral?: string
+  erroCliente?: string
+}> {
   try {
-    let pedido: { numero: number; telefone: string | null; whatsappEnviado: boolean; createdAt: Date; pontoEntrega: { nome: string; horario: string }; nomeCliente: string; quantidade: number; itens: string; observacoes: string | null; valorTotal: number } | null
-    let config: { telefoneNotificacao: string | null } | null
+    let pedido:
+      | {
+          numero: number
+          telefone: string | null
+          whatsappEnviado: boolean
+          createdAt: Date
+          pontoEntrega: { nome: string; horario: string }
+          nomeCliente: string
+          quantidade: number
+          itens: string
+          observacoes: string | null
+          valorTotal: number
+        }
+      | null
 
     if (dados) {
       pedido = dados.pedido
-      config = dados.config
     } else {
-      const [pedidoRes, configRes] = await Promise.all([
-        prisma.pedido.findUnique({
-          where: { numero: pedidoNumero },
-          include: { pontoEntrega: true },
-        }),
-        prisma.configuracao.findFirst(),
-      ])
+      const pedidoRes = await prisma.pedido.findUnique({
+        where: { numero: pedidoNumero },
+        include: { pontoEntrega: true },
+      })
       pedido = pedidoRes
-      config = configRes
     }
 
     if (!pedido || pedido.whatsappEnviado) {
-      return { enviouAlguma: !!pedido?.whatsappEnviado }
+      return {
+        enviadoCliente: !!pedido?.whatsappEnviado,
+      }
     }
 
     const textoComanda = montarTextoComanda({
@@ -42,33 +65,42 @@ export async function sendWhatsAppComanda(
       createdAt: pedido.createdAt,
     })
 
-    // Envia para dono e cliente em paralelo (mais rápido que um após o outro)
-    const promessas: Promise<{ ok: boolean; error?: string }>[] = []
-    if (config?.telefoneNotificacao?.trim()) {
-      promessas.push(sendEvolutionText(config.telefoneNotificacao.trim(), textoComanda))
-    }
-    if (pedido.telefone?.trim()) {
-      promessas.push(sendEvolutionText(pedido.telefone.trim(), textoComanda))
-    }
-    const resultados = await Promise.all(promessas)
-    const enviouAlguma = resultados.some((r) => r.ok)
-    const erros = resultados.filter((r) => !r.ok).map((r) => r.error ?? 'erro')
-    resultados.forEach((r, i) => {
-      if (!r.ok) console.warn('[sendWhatsAppComanda]', i === 0 && config?.telefoneNotificacao ? 'dono' : 'cliente', r.error)
-    })
+    const telefoneCliente = pedido.telefone?.trim() || null
 
-    if (enviouAlguma) {
+    const resCliente = telefoneCliente
+      ? await sendEvolutionText(telefoneCliente, textoComanda)
+      : { ok: false, error: 'Telefone do cliente ausente.' }
+
+    const enviadoCliente = !!resCliente.ok
+
+    if (!enviadoCliente && !telefoneCliente) {
+      console.warn('[sendWhatsAppComanda] Telefone do cliente ausente.')
+    } else if (!enviadoCliente) {
+      console.warn('[sendWhatsAppComanda] Falha ao enviar para cliente:', resCliente.error)
+    }
+
+    // Marca "enviado" apenas quando o cliente recebeu. Isso evita frustração do cliente.
+    if (enviadoCliente) {
       await prisma.pedido.update({
         where: { numero: pedido.numero },
         data: { whatsappEnviado: true },
       })
     }
+
     revalidatePath('/cozinha')
-    return { enviouAlguma, erro: erros.length ? erros.join('; ') : undefined }
+
+    return {
+      enviadoCliente,
+      erroCliente: !enviadoCliente ? (resCliente.error ?? 'Falha ao enviar para o cliente.') : undefined,
+      erroGeral: !enviadoCliente ? 'Falha ao enviar a comanda no WhatsApp.' : undefined,
+    }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     console.warn('[sendWhatsAppComanda]', e)
-    return { enviouAlguma: false, erro: msg }
+    return {
+      enviadoCliente: false,
+      erroGeral: msg,
+    }
   }
 }
 

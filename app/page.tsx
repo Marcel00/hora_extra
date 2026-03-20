@@ -1,30 +1,30 @@
-import Link from 'next/link'
-import Image from 'next/image'
-import { prisma } from '@/lib/db'
-import { isPedidoAberto } from '@/lib/utils'
-import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import Link from 'next/link';
+import Image from 'next/image';
+import { prisma } from '@/lib/db';
+import { isPedidoAberto } from '@/lib/utils';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   const [pontosEntrega, configuracao] = await Promise.all([
     prisma.pontoEntrega.findMany({
       where: { ativo: true },
-      orderBy: { nome: 'asc' }
+      orderBy: { nome: 'asc' },
     }),
-    prisma.configuracao.findFirst()
-  ])
+    prisma.configuracao.findFirst(),
+  ]);
 
   // Default values if config doesn't exist yet
-  const horarioAbertura = configuracao?.horarioAbertura || "08:00"
-  const horarioFechamento = configuracao?.horarioFechamento || "23:00"
+  const horarioAbertura = configuracao?.horarioAbertura || '08:00';
+  const horarioFechamento = configuracao?.horarioFechamento || '23:00';
 
-  const pedidosAbertos = isPedidoAberto(horarioAbertura, horarioFechamento)
+  const pedidosAbertos = isPedidoAberto(horarioAbertura, horarioFechamento);
 
   return (
     <main className="min-h-screen bg-linear-to-br from-orange-50 via-white to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <ThemeToggle />
-      
+
       <div className="container mx-auto px-4 py-12">
         {/* Header com logo */}
         <div className="text-center mb-12">
@@ -34,7 +34,7 @@ export default async function Home() {
               alt="Hora Extra Lanchonete"
               width={320}
               height={160}
-              className="mx-auto h-auto w-full max-w-[280px] sm:max-w-[320px] object-contain"
+              className="mx-auto h-auto w-full max-w-[280px] sm:max-w-[320px] object-contain rounded-3xl"
               priority
             />
           </Link>
@@ -66,7 +66,8 @@ export default async function Home() {
                 Pedidos abrem das {horarioAbertura}h às {horarioFechamento}h
               </p>
               <p className="text-red-600 dark:text-red-400 text-sm mt-2">
-                Volte amanhã entre {horarioAbertura}h e {horarioFechamento}h para fazer seu pedido!
+                Volte amanhã entre {horarioAbertura}h e {horarioFechamento}h
+                para fazer seu pedido!
               </p>
             </div>
           )}
@@ -124,5 +125,5 @@ export default async function Home() {
         </div>
       </div>
     </main>
-  )
+  );
 }
