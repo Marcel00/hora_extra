@@ -6,6 +6,13 @@ import { isPedidoAberto } from '@/lib/utils'
 import { sendEvolutionText } from '@/lib/evolution-api'
 import { montarTextoComanda } from '@/lib/comanda-whatsapp'
 
+const WHATSAPP_MAX_RETRIES = 4
+const WHATSAPP_RETRY_DELAYS_MS = [600, 1200, 2000]
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 /** Envia a comanda por WhatsApp (somente cliente). Se passar `dados`, evita refetch no banco (mais rápido). */
 export async function sendWhatsAppComanda(
   pedidoNumero: number,
@@ -67,16 +74,45 @@ export async function sendWhatsAppComanda(
 
     const telefoneCliente = pedido.telefone?.trim() || null
 
-    const resCliente = telefoneCliente
-      ? await sendEvolutionText(telefoneCliente, textoComanda)
-      : { ok: false, error: 'Telefone do cliente ausente.' }
-
-    const enviadoCliente = !!resCliente.ok
-
-    if (!enviadoCliente && !telefoneCliente) {
+    if (!telefoneCliente) {
       console.warn('[sendWhatsAppComanda] Telefone do cliente ausente.')
-    } else if (!enviadoCliente) {
-      console.warn('[sendWhatsAppComanda] Falha ao enviar para cliente:', resCliente.error)
+      return {
+        enviadoCliente: false,
+        erroCliente: 'Telefone do cliente ausente.',
+        erroGeral: 'Falha ao enviar a comanda no WhatsApp.',
+      }
+    }
+
+    let enviadoCliente = false
+    let ultimoErroCliente: string | undefined
+
+    // Retry com backoff para lidar com oscilações transitórias da API/rede.
+    for (let tentativa = 1; tentativa <= WHATSAPP_MAX_RETRIES; tentativa++) {
+      const resCliente = await sendEvolutionText(telefoneCliente, textoComanda)
+      if (resCliente.ok) {
+        enviadoCliente = true
+        ultimoErroCliente = undefined
+        break
+      }
+
+      ultimoErroCliente = resCliente.error ?? 'Falha no envio'
+      console.warn(
+        `[sendWhatsAppComanda] tentativa ${tentativa}/${WHATSAPP_MAX_RETRIES} falhou:`,
+        ultimoErroCliente
+      )
+
+      if (tentativa < WHATSAPP_MAX_RETRIES) {
+        const delayMs =
+          WHATSAPP_RETRY_DELAYS_MS[tentativa - 1] ??
+          WHATSAPP_RETRY_DELAYS_MS[WHATSAPP_RETRY_DELAYS_MS.length - 1]
+        await sleep(delayMs)
+      }
+    }
+
+    if (!enviadoCliente) {
+      console.warn(
+        '[sendWhatsAppComanda] Todas as tentativas de envio para cliente falharam.'
+      )
     }
 
     // Marca "enviado" apenas quando o cliente recebeu. Isso evita frustração do cliente.
@@ -91,7 +127,7 @@ export async function sendWhatsAppComanda(
 
     return {
       enviadoCliente,
-      erroCliente: !enviadoCliente ? (resCliente.error ?? 'Falha ao enviar para o cliente.') : undefined,
+      erroCliente: !enviadoCliente ? (ultimoErroCliente ?? 'Falha ao enviar para o cliente.') : undefined,
       erroGeral: !enviadoCliente ? 'Falha ao enviar a comanda no WhatsApp.' : undefined,
     }
   } catch (e) {
