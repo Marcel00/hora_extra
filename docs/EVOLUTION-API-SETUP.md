@@ -342,3 +342,6 @@ curl -X POST "https://evolution-api-p67i.onrender.com/instance/create" \
 
 curl -X GET "https://evolution-api-p67i.onrender.com/instance/connect/hora-extra?number=5561996201191" \
  -H "apikey: 07cbae6646d04d9fbe13dac94dd90d76"
+
+link para gerar novo qrcode
+https://evolution-api-p67i.onrender.com/manager/instance/de34f413-9853-4940-bb18-81149947d566/dashboard
