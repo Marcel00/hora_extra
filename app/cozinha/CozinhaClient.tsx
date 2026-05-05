@@ -39,6 +39,7 @@ export function CozinhaClient({ pedidos: pedidosIniciais, pontosEntrega }: Cozin
   const router = useRouter()
   const { isAuthenticated, logout } = useAuthStore()
   const [pedidos, setPedidos] = useState(pedidosIniciais)
+  const [updatingPedidos, setUpdatingPedidos] = useState<number[]>([])
   const [filtroPonto, setFiltroPonto] = useState<string>('todos')
   const [filtroStatus, setFiltroStatus] = useState<'ativos' | 'pendente' | 'preparado' | 'entregue'>('ativos')
   const [printingOrder, setPrintingOrder] = useState<Pedido | null>(null)
@@ -81,13 +82,17 @@ export function CozinhaClient({ pedidos: pedidosIniciais, pontosEntrega }: Cozin
   }
 
   const handleUpdateStatus = async (numero: number, novoStatus: string) => {
+    if (updatingPedidos.includes(numero)) return
+
+    setUpdatingPedidos((prev) => [...prev, numero])
     const result = await updatePedidoStatus(numero, novoStatus)
     if (result.success) {
-      setPedidos(pedidos.map(p => 
-        p.numero === numero ? { ...p, status: novoStatus } : p
-      ))
+      setPedidos((prev) =>
+        prev.map((p) => (p.numero === numero ? { ...p, status: novoStatus } : p))
+      )
       router.refresh()
     }
+    setUpdatingPedidos((prev) => prev.filter((n) => n !== numero))
   }
 
   const handlePrint = (pedido: Pedido) => {
@@ -253,6 +258,7 @@ export function CozinhaClient({ pedidos: pedidosIniciais, pontosEntrega }: Cozin
                     key={pedido.numero}
                     pedido={pedido}
                     onUpdateStatus={handleUpdateStatus}
+                    isUpdatingStatus={updatingPedidos.includes(pedido.numero)}
                     onPrint={handlePrint}
                   />
                 ))}

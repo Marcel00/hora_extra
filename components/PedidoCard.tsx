@@ -26,6 +26,7 @@ interface Pedido {
 interface PedidoCardProps {
   pedido: Pedido;
   onUpdateStatus?: (numero: number, novoStatus: string) => void;
+  isUpdatingStatus?: boolean;
   onPrint?: (pedido: Pedido) => void;
 }
 
@@ -65,6 +66,7 @@ function getPontoTheme(pontoNome: string) {
 export function PedidoCard({
   pedido,
   onUpdateStatus,
+  isUpdatingStatus = false,
   onPrint,
 }: PedidoCardProps) {
   const itens = JSON.parse(pedido.itens) as string[];
@@ -232,6 +234,7 @@ export function PedidoCard({
                 {pedido.status === 'pendente' && (
                   <Button
                     size="sm"
+                    disabled={isUpdatingStatus}
                     onClick={() => onUpdateStatus(pedido.numero, 'preparado')}
                     className="min-h-[44px]"
                   >
@@ -242,6 +245,7 @@ export function PedidoCard({
                   <Button
                     size="sm"
                     variant="secondary"
+                    disabled={isUpdatingStatus}
                     onClick={() => onUpdateStatus(pedido.numero, 'entregue')}
                     className="min-h-[44px]"
                   >
@@ -252,6 +256,7 @@ export function PedidoCard({
                   <Button
                     size="sm"
                     variant="ghost"
+                    disabled={isUpdatingStatus}
                     onClick={() => onUpdateStatus(pedido.numero, 'pendente')}
                     className="min-h-[44px]"
                   >
@@ -262,6 +267,7 @@ export function PedidoCard({
                   <Button
                     size="sm"
                     variant="ghost"
+                    disabled={isUpdatingStatus}
                     onClick={() => onUpdateStatus(pedido.numero, 'pendente')}
                     className="min-h-[44px]"
                   >
