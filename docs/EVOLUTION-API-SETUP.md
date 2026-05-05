@@ -152,8 +152,8 @@ O Web Service não está conseguindo falar com o PostgreSQL. Faça o seguinte:
 No terminal (troque a URL e a chave pelos seus valores):
 
 ```bash
-curl -X POST "https://evolution-xxx.onrender.com/instance/create" \
-  -H "apikey: MinhaChaveSecreta123" \
+curl -X POST "https://evolution-api-p67i.onrender.com/instance/create" \
+  -H "apikey: 07cbae6646d04d9fbe13dac94dd90d76" \
   -H "Content-Type: application/json" \
   -d '{"instanceName": "hora-extra", "integration": "WHATSAPP-BAILEYS", "qrcode": true}'
 ```
@@ -245,6 +245,11 @@ curl -X GET "https://evolution-api-p67i.onrender.com/instance/connect/hora-extra
   -H "apikey: 07cbae6646d04d9fbe13dac94dd90d76"
 ```
 
+```bash
+curl -X GET "https://evolution-api-p67i.onrender.com/instance/connectionState/hora-extra" \
+  -H "apikey: 07cbae6646d04d9fbe13dac94dd90d76"
+```
+
 Troque `5511999999999` pelo número do WhatsApp que vai conectar (país + DDD + número, sem espaços). Na resposta pode vir o campo **`pairingCode`** (ex.: `ABCD-1234`). No celular: WhatsApp → Aparelhos conectados → Conectar um aparelho → **Vincular com número de telefone** → digite o código. Assim você não depende do QR e pode dar tempo do serviço estar estável.
 
 (Se a sua versão da Evolution não retornar `pairingCode` nesse endpoint, use a opção 1.)
@@ -320,3 +325,20 @@ curl -X GET "https://evolution-api-p67i.onrender.com/instance/connect/hora-extra
 ```
 
 > Retorna base64 do QR. Abra `docs/qrcode-viewer.html` para visualizar e escanear.
+
+# 1) conferir se a instância existe
+
+curl -X GET "https://evolution-api-p67i.onrender.com/instance/fetchInstances" \
+ -H "apikey: 07cbae6646d04d9fbe13dac94dd90d76"
+
+# 2) se não existir, criar
+
+curl -X POST "https://evolution-api-p67i.onrender.com/instance/create" \
+ -H "Content-Type: application/json" \
+ -H "apikey: 07cbae6646d04d9fbe13dac94dd90d76" \
+ -d '{"instanceName":"hora-extra","qrcode":false,"integration":"WHATSAPP-BAILEYS"}'
+
+# 3) gerar código de pareamento
+
+curl -X GET "https://evolution-api-p67i.onrender.com/instance/connect/hora-extra?number=5561996201191" \
+ -H "apikey: 07cbae6646d04d9fbe13dac94dd90d76"
